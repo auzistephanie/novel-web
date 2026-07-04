@@ -10,12 +10,8 @@ export default async function LoginPage({
   return (
     <main className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
       <div
-        className="absolute inset-0 opacity-[.05] pointer-events-none"
+        className="absolute inset-0 tile-pattern-bg opacity-[.08] pointer-events-none"
         aria-hidden="true"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, #3a5f8a 0 2px, transparent 2px 18px)",
-        }}
       />
       <div className="relative w-full max-w-sm bg-white border-2 border-ink rounded-xl p-8 shadow-[5px_5px_0_rgba(43,37,32,0.9)]">
         <div

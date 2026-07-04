@@ -18,12 +18,18 @@ export default function StoryWall({
   stories,
   likedIds,
   loggedIn,
+  initialGenre,
 }: {
   stories: Story[];
   likedIds: string[];
   loggedIn: boolean;
+  initialGenre?: string;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const hasInitialGenre =
+    !!initialGenre && stories.some((s) => s.genre === initialGenre);
+  const [selected, setSelected] = useState<string | null>(
+    hasInitialGenre ? initialGenre! : null
+  );
   const likedSet = useMemo(() => new Set(likedIds), [likedIds]);
 
   const genres = useMemo(() => {

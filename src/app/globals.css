@@ -38,6 +38,11 @@ body {
   width: 100%;
 }
 
+.tile-pattern-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='22'%3E%3Cpath d='M18 2 L34 11 L18 20 L2 11Z' fill='none' stroke='%233a5f8a' stroke-width='1.5'/%3E%3Ccircle cx='0' cy='0' r='1.8' fill='%23c1503a'/%3E%3Ccircle cx='36' cy='22' r='1.8' fill='%23c1503a'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
 @keyframes drift {
   0%,
   100% {

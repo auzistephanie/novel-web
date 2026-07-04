@@ -8,41 +8,75 @@ export default async function NavBar() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: genreRows } = await supabase.from("novel_stories").select("genre");
+  const genreCounts = new Map<string, number>();
+  for (const row of genreRows ?? []) {
+    genreCounts.set(row.genre, (genreCounts.get(row.genre) ?? 0) + 1);
+  }
+  const genres = Array.from(genreCounts.entries()).sort((a, b) => b[1] - a[1]);
+
   const linkClass =
     "text-sm text-ink/70 hover:text-ink hover:bg-ink/5 rounded-md px-3 py-2 transition-colors";
 
   return (
     <>
       {/* 桌面版：左側直向 side menu */}
-      <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 md:h-screen md:sticky md:top-0 border-r border-ink/10 bg-cream/90 backdrop-blur px-4 py-6">
-        <Link href="/" className="font-serif font-black text-xl mb-8 px-3">
-          顧事
-        </Link>
-        <nav className="flex flex-col gap-1 flex-1">
-          <Link href="/#short-stories" className={linkClass}>
-            短篇故事
+      <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 md:h-screen md:sticky md:top-0 md:relative border-r border-ink/10 bg-cream/90 backdrop-blur px-4 py-6 overflow-y-auto">
+        <div
+          className="absolute inset-0 tile-pattern-bg opacity-[.05] pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="relative flex flex-col flex-1">
+          <Link href="/" className="font-serif font-black text-xl mb-8 px-3">
+            顧事
           </Link>
-          <Link href="/#serial-stories" className={linkClass}>
-            每日連載
-          </Link>
-          {user && (
-            <Link href="/my-endings" className={linkClass}>
-              我的結局本
+          <nav className="flex flex-col gap-1">
+            <Link href="/#short-stories" className={linkClass}>
+              短篇故事
             </Link>
-          )}
-        </nav>
-        <div className="px-3">
-          {user ? (
-            <form action={logout}>
-              <button className="text-brick font-bold text-sm" type="submit">
-                登出
-              </button>
-            </form>
-          ) : (
-            <Link href="/login" className="text-brick font-bold text-sm">
-              登入
+            <Link href="/#serial-stories" className={linkClass}>
+              每日連載
             </Link>
+            {user && (
+              <Link href="/my-endings" className={linkClass}>
+                我的結局本
+              </Link>
+            )}
+          </nav>
+
+          {genres.length > 0 && (
+            <div className="mt-6">
+              <p className="text-xs font-bold text-ink/40 px-3 mb-1 tracking-wide">類別</p>
+              <nav className="flex flex-col gap-0.5 max-h-64 overflow-y-auto">
+                {genres.map(([genre, count]) => (
+                  <Link
+                    key={genre}
+                    href={`/?genre=${encodeURIComponent(genre)}#stories`}
+                    className="text-xs text-ink/60 hover:text-ink hover:bg-ink/5 rounded-md px-3 py-1.5 transition-colors flex items-center justify-between gap-2"
+                  >
+                    <span className="truncate">{genre}</span>
+                    <span className="text-ink/30 shrink-0">{count}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
           )}
+
+          <div className="flex-1" />
+
+          <div className="px-3 pt-4">
+            {user ? (
+              <form action={logout}>
+                <button className="text-brick font-bold text-sm" type="submit">
+                  登出
+                </button>
+              </form>
+            ) : (
+              <Link href="/login" className="text-brick font-bold text-sm">
+                登入
+              </Link>
+            )}
+          </div>
         </div>
       </aside>
 

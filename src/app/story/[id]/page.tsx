@@ -65,37 +65,45 @@ export default async function StoryPage({
         </article>
       </div>
 
-      <div className="mt-8 bg-mustard/10 border border-mustard/30 rounded-2xl p-6 sm:p-8">
-        <h2 className="font-serif font-bold text-lg mb-3">專屬結局</h2>
-
-        {!user && (
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm text-ink/60">
-              登入並點擊喜歡，系統會為您生成專屬結局。
-            </p>
-            <LikeButton storyId={story.id} liked={false} loggedIn={false} size="lg" />
-          </div>
-        )}
-
-        {user && !liked && (
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm text-ink/60">
-              點擊下方按鈕表示喜歡，系統將為您生成專屬結局。
-            </p>
-            <LikeButton storyId={story.id} liked={liked} loggedIn={!!user} size="lg" />
-          </div>
-        )}
-
-        {user && liked && !ending && (
-          <p className="text-sm text-ink/60">
-            正在生成中，請耐心等候下一次系統排程完成。
+      {story.story_type === "short" ? (
+        <div className="mt-8 bg-ink/5 border border-ink/10 rounded-2xl p-6 sm:p-8">
+          <p className="text-sm text-ink/50">
+            這是一篇完整短篇，故事本身已有結局，不會再另外生成專屬結局。點擊上方「喜歡」可以收藏這篇故事。
           </p>
-        )}
+        </div>
+      ) : (
+        <div className="mt-8 bg-mustard/10 border border-mustard/30 rounded-2xl p-6 sm:p-8">
+          <h2 className="font-serif font-bold text-lg mb-3">專屬結局</h2>
 
-        {ending && (
-          <p className="whitespace-pre-wrap leading-8 text-ink/85">{ending}</p>
-        )}
-      </div>
+          {!user && (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-ink/60">
+                登入並點擊喜歡，系統會為您生成專屬結局。
+              </p>
+              <LikeButton storyId={story.id} liked={false} loggedIn={false} size="lg" />
+            </div>
+          )}
+
+          {user && !liked && (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-ink/60">
+                點擊下方按鈕表示喜歡，系統將為您生成專屬結局。
+              </p>
+              <LikeButton storyId={story.id} liked={liked} loggedIn={!!user} size="lg" />
+            </div>
+          )}
+
+          {user && liked && !ending && (
+            <p className="text-sm text-ink/60">
+              正在生成中，請耐心等候下一次系統排程完成。
+            </p>
+          )}
+
+          {ending && (
+            <p className="whitespace-pre-wrap leading-8 text-ink/85">{ending}</p>
+          )}
+        </div>
+      )}
     </main>
   );
 }

@@ -5,7 +5,14 @@ import TileDivider from "@/components/TileDivider";
 
 export const revalidate = 0;
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ genre?: string }>;
+}) {
+  const params = await searchParams;
+  const initialGenre = params.genre;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,7 +58,12 @@ export default async function HomePage() {
             <p className="text-ink/60 mb-8">
               有頭有尾、一次睇晒，唔使追更，適合想即刻睇到結局嘅您。
             </p>
-            <StoryWall stories={shortStories} likedIds={likedIds} loggedIn={!!user} />
+            <StoryWall
+              stories={shortStories}
+              likedIds={likedIds}
+              loggedIn={!!user}
+              initialGenre={initialGenre}
+            />
           </section>
         )}
 
@@ -63,7 +75,12 @@ export default async function HomePage() {
                 ? "點擊喜歡記錄您的偏好，系統將為您生成專屬結局。"
                 : "登入後即可記錄喜歡，並獲得專屬結局。"}
             </p>
-            <StoryWall stories={serialStories} likedIds={likedIds} loggedIn={!!user} />
+            <StoryWall
+              stories={serialStories}
+              likedIds={likedIds}
+              loggedIn={!!user}
+              initialGenre={initialGenre}
+            />
           </section>
         )}
       </main>
