@@ -64,21 +64,11 @@ export default function StoryWall({
               key={genre}
               type="button"
               onClick={() => setSelected(genre)}
-              className="tile-pattern-bg text-xs font-bold px-3 py-1.5 rounded-full border-2 transition-colors"
+              className="text-xs font-bold px-3 py-1.5 rounded-full border-2 transition-colors"
               style={
                 active
-                  ? {
-                      backgroundColor: color.bar,
-                      backgroundBlendMode: "overlay",
-                      borderColor: color.bar,
-                      color: "#f6efe0",
-                    }
-                  : {
-                      backgroundColor: color.bg,
-                      backgroundBlendMode: "multiply",
-                      borderColor: color.bar + "55",
-                      color: color.text,
-                    }
+                  ? { background: color.bar, borderColor: color.bar, color: "#f6efe0" }
+                  : { borderColor: color.bar + "55", color: color.text, background: color.bg }
               }
             >
               {genre}（{count}）
