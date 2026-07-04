@@ -68,52 +68,43 @@ export default function Hero({
         <div className="relative h-40 sm:h-48 hidden sm:block" aria-hidden="true">
           <svg viewBox="0 0 260 200" width="100%" height="100%">
             <defs>
-              <pattern id="heroTile" width="24" height="15" patternUnits="userSpaceOnUse">
-                <rect width="24" height="15" fill="#f6efe0" />
+              <pattern id="heroTile" width="26" height="16" patternUnits="userSpaceOnUse">
+                <rect width="26" height="16" fill="#f6efe0" />
                 <path
-                  d="M12 1.5 L22.5 7.5 L12 13.5 L1.5 7.5Z"
+                  d="M13 1.5 L24.5 8 L13 14.5 L1.5 8Z"
                   fill="none"
                   stroke="#3a5f8a"
-                  strokeWidth="1.3"
+                  strokeWidth="1.2"
                 />
-                <circle cx="0" cy="0" r="1.6" fill="#c1503a" />
-                <circle cx="24" cy="15" r="1.6" fill="#c1503a" />
+                <circle cx="0" cy="0" r="1.5" fill="#c1503a" />
+                <circle cx="26" cy="16" r="1.5" fill="#c1503a" />
               </pattern>
-              <clipPath id="heroBookShape">
-                <path d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z" />
-              </clipPath>
             </defs>
 
-            <g className="float-el" style={{ transformOrigin: "60px 32px" }}>
-              <circle cx="60" cy="32" r="9" fill="#c99a3c" />
-              <line x1="60" y1="23" x2="60" y2="16" stroke="#2b2520" strokeWidth="2" />
+            <g className="float-el" style={{ transformOrigin: "55px 30px" }}>
+              <circle cx="55" cy="30" r="8" fill="#c99a3c" />
+              <line x1="55" y1="22" x2="55" y2="15" stroke="#2b2520" strokeWidth="2" />
             </g>
-            <g className="float-el" style={{ transformOrigin: "205px 28px", animationDelay: "1.2s" }}>
-              <circle cx="205" cy="28" r="7" fill="#c1503a" />
-              <line x1="205" y1="21" x2="205" y2="14" stroke="#2b2520" strokeWidth="2" />
+            <g className="float-el" style={{ transformOrigin: "210px 30px", animationDelay: "1.2s" }}>
+              <circle cx="210" cy="30" r="7" fill="#c1503a" />
+              <line x1="210" y1="23" x2="210" y2="16" stroke="#2b2520" strokeWidth="2" />
             </g>
 
-            <path
-              d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z"
-              fill="#fff"
+            <rect
+              x="35"
+              y="30"
+              width="190"
+              height="140"
+              rx="10"
+              fill="url(#heroTile)"
               stroke="#2b2520"
               strokeWidth="3"
             />
-            <g clipPath="url(#heroBookShape)">
-              <rect x="40" y="30" width="180" height="145" fill="url(#heroTile)" />
-            </g>
-            <path
-              d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z"
-              fill="none"
-              stroke="#2b2520"
-              strokeWidth="3"
-            />
-            <line x1="130" y1="40" x2="130" y2="150" stroke="#2b2520" strokeWidth="2.5" />
 
-            <circle cx="130" cy="95" r="24" fill="#c1503a" stroke="#2b2520" strokeWidth="2.5" />
+            <circle cx="196" cy="146" r="26" fill="#c1503a" stroke="#2b2520" strokeWidth="2.5" />
             <text
-              x="130"
-              y="90"
+              x="196"
+              y="141"
               textAnchor="middle"
               fontFamily="Noto Serif TC, serif"
               fontWeight="900"
@@ -123,8 +114,8 @@ export default function Hero({
               顧
             </text>
             <text
-              x="130"
-              y="104"
+              x="196"
+              y="155"
               textAnchor="middle"
               fontFamily="Noto Serif TC, serif"
               fontWeight="900"
