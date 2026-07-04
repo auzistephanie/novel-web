@@ -17,8 +17,8 @@
 
 ## Scheduled tasks（喺 Cowork 度管理，唔喺呢個 repo）
 
-- `novel-story-generator` — 每日 08:10，唔夠 3 篇就補到 3 篇，25 類別加權池（男頻 weight 1 / 女頻 weight 2，同 daily-novel 個 pool 一致）
-- `novel-ending-generator` — 每日 20:09，掃 `novel_likes` 中未有對應 `novel_endings` 嘅組合，逐個生成專屬結局
+- `novel-story-generator` — 每日 12:30 同 17:30 各跑一次，每次都生成新一批 3 篇（唔 check 今日出過幾多，逐次疊加），25 類別加權池（男頻 weight 1 / 女頻 weight 2，同 daily-novel 個 pool 一致）
+- `novel-ending-generator` — 每日 17:30，掃 `novel_likes` 中未有對應 `novel_endings` 嘅組合，逐個生成專屬結局
 
 兩個 task 嘅完整 prompt 存喺 `~/Documents/Claude/Scheduled/<taskId>/SKILL.md`，修改用 `update_scheduled_task`，唔好淨係改呢份 repo 嘅文件以為會生效。
 
