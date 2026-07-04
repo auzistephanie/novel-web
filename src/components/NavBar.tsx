@@ -16,11 +16,11 @@ export default async function NavBar() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/" className="text-ink/70 hover:text-ink">
-            故事牆
+            每日連載
           </Link>
           {user && (
             <Link href="/my-endings" className="text-ink/70 hover:text-ink">
-              我的結局
+              我的結局本
             </Link>
           )}
           {user ? (

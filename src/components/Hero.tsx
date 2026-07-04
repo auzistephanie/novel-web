@@ -23,7 +23,7 @@ export default function Hero({
       <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-10 grid md:grid-cols-[1.1fr_.9fr] gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-brick bg-brick/10 px-3 py-1.5 rounded-full mb-5">
-            🔥 AI 即時生成 · 每日更新
+            🔥 AI 定時更新 · 一日兩批
           </div>
           <h1 className="font-serif font-black text-3xl sm:text-4xl leading-tight mb-4">
             每日一篇，

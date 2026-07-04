@@ -36,7 +36,7 @@ export default async function HomePage() {
       <TileDivider />
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
-        <h1 className="font-serif font-black text-3xl mb-1">故事牆</h1>
+        <h1 className="font-serif font-black text-3xl mb-1">每日連載</h1>
         <p className="text-ink/60 mb-8">
           {user
             ? "點擊喜歡記錄您的偏好，系統將為您生成專屬結局。"

@@ -38,7 +38,7 @@ export default async function MyEndingsPage() {
 
   return (
     <main className="flex-1 max-w-2xl w-full mx-auto px-5 py-10">
-      <h1 className="font-serif font-black text-3xl mb-1">我的結局</h1>
+      <h1 className="font-serif font-black text-3xl mb-1">我的結局本</h1>
       <p className="text-ink/60 mb-8">
         您喜歡過的故事，AI 為您撰寫的專屬結局都在這裡。
       </p>
@@ -70,13 +70,13 @@ export default async function MyEndingsPage() {
             />
           </svg>
           <p className="text-ink/60 mb-5">
-            尚未有結局，請先到故事牆點擊喜歡幾個故事，AI 就會為您撰寫專屬結局。
+            尚未有結局，請先到每日連載點擊喜歡幾個故事，AI 就會為您撰寫專屬結局。
           </p>
           <Link
             href="/#stories"
             className="inline-flex items-center gap-2 bg-brick text-cream font-bold rounded-md px-5 py-2.5 shadow-[3px_3px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
           >
-            前往故事牆 →
+            前往每日連載 →
           </Link>
         </div>
       )}
