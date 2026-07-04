@@ -13,11 +13,17 @@
 
 ## 頁面
 
-`/login`（Supabase Auth）· `/`（故事牆）· `/story/[id]`（全文＋結局）· `/my-endings`（登入後先見）
+`/login`（Supabase Auth）· `/`（首頁，拆「短篇故事」＋「每日連載」兩個 section，各自獨立 genre 篩選）· `/story/[id]`（全文＋結局）· `/my-endings`（我的結局本，登入後先見，每個結局卡內建「展開故事全文」）
+
+Side menu：桌面版左側直向（logo＋短篇故事／每日連載／我的結局本／登出），手機版收做頂部橫向 bar。組件係 `src/components/NavBar.tsx`（檔名未改但內容已經係 sidebar+mobile bar）。
+
+## 內容型態（story_type，2026-07-05 加）
+
+`novel_stories` 加咗 `story_type` 欄位：`'serial'`（連載爽文，1200-1800字，cliffhanger 收尾唔完整）／`'short'`（完整短篇，1000-1500字，有頭有尾）。首頁按呢個欄位分兩個 section 顯示。
 
 ## Scheduled tasks（喺 Cowork 度管理，唔喺呢個 repo）
 
-- `novel-story-generator` — 每日 12:30 同 17:30 各跑一次，每次都生成新一批 3 篇（唔 check 今日出過幾多，逐次疊加），25 類別加權池（男頻 weight 1 / 女頻 weight 2，同 daily-novel 個 pool 一致）
+- `novel-story-generator` — 每日 12:30 同 17:30 各跑一次，每次都生成新一批 3 篇（唔 check 今日出過幾多，逐次疊加），固定比例 2 連載＋1 短篇，25 類別加權池（男頻 weight 1 / 女頻 weight 2，同 daily-novel 個 pool 一致）
 - `novel-ending-generator` — 每日 17:30，掃 `novel_likes` 中未有對應 `novel_endings` 嘅組合，逐個生成專屬結局
 
 兩個 task 嘅完整 prompt 存喺 `~/Documents/Claude/Scheduled/<taskId>/SKILL.md`，修改用 `update_scheduled_task`，唔好淨係改呢份 repo 嘅文件以為會生效。
@@ -32,7 +38,7 @@
 
 App 名由「爽文快遞」改做「**顧事**」——同「故事」喺國語＋粵語都完全同音，雙關「照顧/講究事情」，2 字精煉。全站（metadata、NavBar、Footer、Hero SVG 插畫、login page）已同步改名。
 
-⚠️ 待決：Stephanie 提出而家內容全部強制 cliffhanger 收尾（連載感），但 Telegram 版原本設計係「單篇完整故事」為預設、「連載」先係讀者評分高先觸發嘅加碼選項（見 `daily-novel/docs/SYSTEMS.md`）。novel-web 未來可能要加返「短篇」（完整結局，唔連載）呢個內容型態，構想係故事表加 `story_type`（'short'/'serial'）欄位＋前端加篩選，但呢部分做法仲未 confirm，唔好未問過先落實。
+✅ 短篇/連載分流已落實（2026-07-05）：見上面「內容型態」一節。
 
 ## 開發須知
 
