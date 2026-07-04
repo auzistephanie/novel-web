@@ -28,12 +28,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {!user && (
-        <>
-          <Hero />
-          <TileDivider />
-        </>
-      )}
+      <Hero loggedIn={!!user} />
+      <TileDivider />
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
         <h1 className="font-serif font-black text-3xl mb-1">故事牆</h1>

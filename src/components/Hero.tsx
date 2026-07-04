@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function Hero() {
+export default function Hero({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -29,17 +29,23 @@ export default function Hero() {
             AI 將為您生成這個故事的專屬結局。
           </p>
           <div className="flex gap-3 flex-wrap">
-            <Link
-              href="/login"
-              className="bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
-            >
-              登入開始閱讀 →
-            </Link>
+            {!loggedIn && (
+              <Link
+                href="/login"
+                className="bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
+              >
+                登入開始閱讀 →
+              </Link>
+            )}
             <a
               href="#stories"
-              className="border-2 border-ink font-bold rounded-md px-6 py-3"
+              className={
+                loggedIn
+                  ? "bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
+                  : "border-2 border-ink font-bold rounded-md px-6 py-3"
+              }
             >
-              查看今日故事
+              查看今日故事 →
             </a>
           </div>
         </div>
