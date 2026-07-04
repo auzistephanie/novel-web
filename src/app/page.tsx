@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import StoryCard from "@/components/StoryCard";
+import StoryWall from "@/components/StoryWall";
 import Hero from "@/components/Hero";
 import TileDivider from "@/components/TileDivider";
 
@@ -21,13 +21,13 @@ export default async function HomePage() {
     .from("novel_stories")
     .select("id", { count: "exact", head: true });
 
-  let likedIds = new Set<string>();
+  let likedIds: string[] = [];
   if (user) {
     const { data: likes } = await supabase
       .from("novel_likes")
       .select("story_id")
       .eq("user_id", user.id);
-    likedIds = new Set((likes ?? []).map((l) => l.story_id as string));
+    likedIds = (likes ?? []).map((l) => l.story_id as string);
   }
 
   return (
@@ -43,17 +43,13 @@ export default async function HomePage() {
             : "登入後即可記錄喜歡，並獲得專屬結局。"}
         </p>
 
-        {(!stories || stories.length === 0) && (
+        {(!stories || stories.length === 0) ? (
           <div className="border border-dashed border-ink/30 rounded-xl p-10 text-center text-ink/50">
             尚未有故事，系統正在生成中，請稍候。
           </div>
+        ) : (
+          <StoryWall stories={stories} likedIds={likedIds} loggedIn={!!user} />
         )}
-
-        <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-          {stories?.map((s) => (
-            <StoryCard key={s.id} story={s} liked={likedIds.has(s.id)} loggedIn={!!user} />
-          ))}
-        </div>
       </main>
     </>
   );
