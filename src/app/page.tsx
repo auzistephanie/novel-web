@@ -43,7 +43,9 @@ export default async function HomePage({
   return (
     <>
       <Hero loggedIn={!!user} storyCount={storyCount ?? 0} />
-      <TileDivider />
+      <div className="max-w-4xl mx-auto px-5">
+        <TileDivider />
+      </div>
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
         {(!stories || stories.length === 0) && (
@@ -68,7 +70,7 @@ export default async function HomePage({
         )}
 
         {shortStories.length > 0 && serialStories.length > 0 && (
-          <div className="-mx-5 mb-10">
+          <div className="mb-10">
             <TileDivider />
           </div>
         )}
