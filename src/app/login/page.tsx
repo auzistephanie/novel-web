@@ -8,8 +8,22 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm bg-white border-2 border-ink rounded-xl p-8 shadow-[5px_5px_0_rgba(43,37,32,0.9)]">
+    <main className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[.05] pointer-events-none"
+        aria-hidden="true"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, #3a5f8a 0 2px, transparent 2px 18px)",
+        }}
+      />
+      <div className="relative w-full max-w-sm bg-white border-2 border-ink rounded-xl p-8 shadow-[5px_5px_0_rgba(43,37,32,0.9)]">
+        <div
+          className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-mustard border-2 border-ink flex items-center justify-center text-xs font-black rotate-12"
+          aria-hidden="true"
+        >
+          爽
+        </div>
         <h1 className="font-serif text-2xl font-black mb-1">爽文快遞</h1>
         <p className="text-sm text-ink/60 mb-6">
           登入睇故事、記錄鍾意，換返專屬結局。
