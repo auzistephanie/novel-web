@@ -11,6 +11,7 @@ type Story = {
   protagonist: string | null;
   content: string;
   created_at: string;
+  story_type?: string;
 };
 
 export default function StoryWall({

@@ -9,6 +9,7 @@ type Story = {
   protagonist: string | null;
   content: string;
   created_at: string;
+  story_type?: string;
 };
 
 export default function StoryCard({
@@ -33,12 +34,19 @@ export default function StoryCard({
         aria-hidden="true"
       />
       <div className="flex items-center justify-between">
-        <span
-          className="text-xs font-bold tracking-wide px-2 py-1 rounded-full"
-          style={{ color: color.text, background: color.bg }}
-        >
-          {story.genre}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className="text-xs font-bold tracking-wide px-2 py-1 rounded-full"
+            style={{ color: color.text, background: color.bg }}
+          >
+            {story.genre}
+          </span>
+          {story.story_type === "short" && (
+            <span className="text-xs font-bold tracking-wide px-2 py-1 rounded-full bg-ink/8 text-ink/50">
+              完整短篇
+            </span>
+          )}
+        </div>
         <LikeButton storyId={story.id} liked={liked} loggedIn={loggedIn} />
       </div>
       <Link

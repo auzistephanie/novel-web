@@ -30,9 +30,12 @@ export default function Hero({
             <br />
             <span className="text-brick">精彩</span>到停不下來
           </h1>
-          <p className="text-ink/70 text-sm sm:text-base max-w-md mb-6">
+          <p className="text-ink/70 text-sm sm:text-base max-w-md mb-3">
             重生逆襲、馬甲文、系統流、穿書反派任您選擇——點擊喜歡記錄您的偏好，
             AI 將為您生成這個故事的專屬結局。
+          </p>
+          <p className="text-ink/50 text-xs sm:text-sm max-w-md mb-6">
+            想追更就睇「每日連載」，想一次睇晒就揀「短篇故事」——兩種節奏，任您揀。
           </p>
           <div className="flex gap-3 flex-wrap">
             {!loggedIn && (
@@ -44,14 +47,20 @@ export default function Hero({
               </Link>
             )}
             <a
-              href="#stories"
+              href="#short-stories"
               className={
                 loggedIn
                   ? "bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
                   : "border-2 border-ink font-bold rounded-md px-6 py-3"
               }
             >
-              查看今日故事 →
+              查看短篇故事 →
+            </a>
+            <a
+              href="#serial-stories"
+              className="border-2 border-ink font-bold rounded-md px-6 py-3"
+            >
+              查看每日連載 →
             </a>
           </div>
         </div>

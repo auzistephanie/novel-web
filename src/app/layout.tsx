@@ -37,10 +37,12 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-cream text-ink">
+      <body className="min-h-full flex flex-col md:flex-row bg-cream text-ink">
         <NavBar />
-        {children}
-        <Footer />
+        <div className="flex-1 min-w-0 flex flex-col">
+          {children}
+          <Footer />
+        </div>
       </body>
     </html>
   );

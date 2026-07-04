@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGenreColor } from "@/lib/genreColor";
+import StoryExcerptToggle from "@/components/StoryExcerptToggle";
 
 export const revalidate = 0;
 
@@ -10,7 +11,7 @@ type EndingRow = {
   ending_content: string;
   created_at: string;
   story_id: string;
-  novel_stories: { title: string; genre: string } | null;
+  novel_stories: { title: string; genre: string; content: string } | null;
 };
 
 function formatDate(iso: string) {
@@ -29,7 +30,7 @@ export default async function MyEndingsPage() {
 
   const { data: endings } = await supabase
     .from("novel_endings")
-    .select("id, ending_content, created_at, story_id, novel_stories(title, genre)")
+    .select("id, ending_content, created_at, story_id, novel_stories(title, genre, content)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .returns<EndingRow[]>();
@@ -115,6 +116,12 @@ export default async function MyEndingsPage() {
                     </div>
                     <p className="text-xs text-ink/40 mb-3">
                       {formatDate(e.created_at)} 生成
+                    </p>
+                    {e.novel_stories?.content && (
+                      <StoryExcerptToggle content={e.novel_stories.content} />
+                    )}
+                    <p className="text-xs font-bold text-brick mb-2 tracking-wide">
+                      ● 專屬結局
                     </p>
                     <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7">
                       {e.ending_content}
