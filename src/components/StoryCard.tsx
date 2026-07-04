@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LikeButton from "./LikeButton";
+import { getGenreColor } from "@/lib/genreColor";
 
 type Story = {
   id: string;
@@ -20,18 +21,29 @@ export default function StoryCard({
   loggedIn: boolean;
 }) {
   const excerpt = story.content.slice(0, 90).trim();
+  const color = getGenreColor(story.genre);
 
   return (
-    <div className="border border-ink/15 rounded-xl bg-white/60 p-5 flex flex-col gap-3 shadow-[3px_3px_0_rgba(43,37,32,0.15)]">
+    <div
+      className="group relative border border-ink/15 rounded-xl bg-white/60 p-5 pl-6 flex flex-col gap-3 shadow-[3px_3px_0_rgba(43,37,32,0.15)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[5px_6px_0_rgba(43,37,32,0.2)]"
+    >
+      <span
+        className="absolute left-0 top-3 bottom-3 w-1.5 rounded-full"
+        style={{ background: color.bar }}
+        aria-hidden="true"
+      />
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold tracking-wide text-indigo bg-indigo/10 px-2 py-1 rounded-full">
+        <span
+          className="text-xs font-bold tracking-wide px-2 py-1 rounded-full"
+          style={{ color: color.text, background: color.bg }}
+        >
           {story.genre}
         </span>
         <LikeButton storyId={story.id} liked={liked} loggedIn={loggedIn} />
       </div>
       <Link
         href={`/story/${story.id}`}
-        className="font-serif font-bold text-lg leading-snug hover:text-brick"
+        className="font-serif font-bold text-lg leading-snug group-hover:text-brick transition-colors"
       >
         {story.title}
       </Link>

@@ -17,6 +17,10 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(30);
 
+  const { count: storyCount } = await supabase
+    .from("novel_stories")
+    .select("id", { count: "exact", head: true });
+
   let likedIds = new Set<string>();
   if (user) {
     const { data: likes } = await supabase
@@ -28,7 +32,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero loggedIn={!!user} />
+      <Hero loggedIn={!!user} storyCount={storyCount ?? 0} />
       <TileDivider />
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
@@ -45,7 +49,7 @@ export default async function HomePage() {
           </div>
         )}
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
           {stories?.map((s) => (
             <StoryCard key={s.id} story={s} liked={likedIds.has(s.id)} loggedIn={!!user} />
           ))}

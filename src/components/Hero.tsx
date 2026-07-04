@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-export default function Hero({ loggedIn = false }: { loggedIn?: boolean }) {
+export default function Hero({
+  loggedIn = false,
+  storyCount = 0,
+}: {
+  loggedIn?: boolean;
+  storyCount?: number;
+}) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -105,8 +111,8 @@ export default function Hero({ loggedIn = false }: { loggedIn?: boolean }) {
           <span className="text-xs text-ink/50">每日更新批次</span>
         </div>
         <div>
-          <b className="font-serif font-black text-2xl text-indigo block">1</b>
-          <span className="text-xs text-ink/50">專屬您的結局</span>
+          <b className="font-serif font-black text-2xl text-indigo block">{storyCount}</b>
+          <span className="text-xs text-ink/50">已生成故事</span>
         </div>
       </div>
     </section>
