@@ -67,46 +67,72 @@ export default function Hero({
 
         <div className="relative h-40 sm:h-48 hidden sm:block" aria-hidden="true">
           <svg viewBox="0 0 260 200" width="100%" height="100%">
-            <rect
-              x="30"
-              y="50"
-              width="200"
-              height="120"
-              rx="8"
-              fill="#f6efe0"
+            <defs>
+              <pattern id="heroTile" width="24" height="15" patternUnits="userSpaceOnUse">
+                <rect width="24" height="15" fill="#f6efe0" />
+                <path
+                  d="M12 1.5 L22.5 7.5 L12 13.5 L1.5 7.5Z"
+                  fill="none"
+                  stroke="#3a5f8a"
+                  strokeWidth="1.3"
+                />
+                <circle cx="0" cy="0" r="1.6" fill="#c1503a" />
+                <circle cx="24" cy="15" r="1.6" fill="#c1503a" />
+              </pattern>
+              <clipPath id="heroBookShape">
+                <path d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z" />
+              </clipPath>
+            </defs>
+
+            <g className="float-el" style={{ transformOrigin: "60px 32px" }}>
+              <circle cx="60" cy="32" r="9" fill="#c99a3c" />
+              <line x1="60" y1="23" x2="60" y2="16" stroke="#2b2520" strokeWidth="2" />
+            </g>
+            <g className="float-el" style={{ transformOrigin: "205px 28px", animationDelay: "1.2s" }}>
+              <circle cx="205" cy="28" r="7" fill="#c1503a" />
+              <line x1="205" y1="21" x2="205" y2="14" stroke="#2b2520" strokeWidth="2" />
+            </g>
+
+            <path
+              d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z"
+              fill="#fff"
               stroke="#2b2520"
               strokeWidth="3"
             />
-            <rect x="30" y="50" width="200" height="28" fill="#c1503a" stroke="#2b2520" strokeWidth="3" />
+            <g clipPath="url(#heroBookShape)">
+              <rect x="40" y="30" width="180" height="145" fill="url(#heroTile)" />
+            </g>
+            <path
+              d="M50 55 L130 40 L210 55 L210 165 L130 150 L50 165 Z"
+              fill="none"
+              stroke="#2b2520"
+              strokeWidth="3"
+            />
+            <line x1="130" y1="40" x2="130" y2="150" stroke="#2b2520" strokeWidth="2.5" />
+
+            <circle cx="130" cy="95" r="24" fill="#c1503a" stroke="#2b2520" strokeWidth="2.5" />
             <text
               x="130"
-              y="70"
+              y="90"
               textAnchor="middle"
               fontFamily="Noto Serif TC, serif"
               fontWeight="900"
-              fontSize="15"
-              letterSpacing="6"
+              fontSize="12"
               fill="#f6efe0"
             >
-              顧　事
+              顧
             </text>
-            <g>
-              <rect x="46" y="96" width="18" height="24" fill="#3a5f8a" />
-              <rect x="68" y="92" width="18" height="28" fill="#c99a3c" />
-              <rect x="90" y="98" width="18" height="22" fill="#c1503a" />
-              <rect x="112" y="94" width="18" height="26" fill="#2f4a3e" />
-              <rect x="134" y="98" width="18" height="22" fill="#3a5f8a" />
-              <rect x="156" y="92" width="18" height="28" fill="#c1503a" />
-              <rect x="178" y="96" width="18" height="24" fill="#c99a3c" />
-            </g>
-            <g className="float-el" style={{ transformOrigin: "50px 30px" }}>
-              <circle cx="50" cy="30" r="10" fill="#c99a3c" />
-              <line x1="50" y1="20" x2="50" y2="12" stroke="#2b2520" strokeWidth="2" />
-            </g>
-            <g className="float-el" style={{ transformOrigin: "215px 25px", animationDelay: "1.2s" }}>
-              <circle cx="215" cy="25" r="8" fill="#c1503a" />
-              <line x1="215" y1="17" x2="215" y2="10" stroke="#2b2520" strokeWidth="2" />
-            </g>
+            <text
+              x="130"
+              y="104"
+              textAnchor="middle"
+              fontFamily="Noto Serif TC, serif"
+              fontWeight="900"
+              fontSize="12"
+              fill="#f6efe0"
+            >
+              事
+            </text>
           </svg>
         </div>
       </div>

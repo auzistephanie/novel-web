@@ -53,7 +53,7 @@ export default async function HomePage({
         )}
 
         {shortStories.length > 0 && (
-          <section id="short-stories" className="mb-14">
+          <section id="short-stories" className="mb-10">
             <h1 className="font-serif font-black text-3xl mb-1">短篇故事</h1>
             <p className="text-ink/60 mb-8">
               有頭有尾、一次睇晒，唔使追更，適合想即刻睇到結局嘅您。
@@ -65,6 +65,12 @@ export default async function HomePage({
               initialGenre={initialGenre}
             />
           </section>
+        )}
+
+        {shortStories.length > 0 && serialStories.length > 0 && (
+          <div className="-mx-5 mb-10">
+            <TileDivider />
+          </div>
         )}
 
         {serialStories.length > 0 && (

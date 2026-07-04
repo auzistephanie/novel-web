@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
+import { getGenreColor } from "@/lib/genreColor";
 
 export default async function NavBar() {
   const supabase = await createClient();
@@ -45,20 +46,24 @@ export default async function NavBar() {
           </nav>
 
           {genres.length > 0 && (
-            <div className="mt-6">
-              <p className="text-xs font-bold text-ink/40 px-3 mb-1 tracking-wide">類別</p>
-              <nav className="flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-                {genres.map(([genre, count]) => (
-                  <Link
-                    key={genre}
-                    href={`/?genre=${encodeURIComponent(genre)}#stories`}
-                    className="text-xs text-ink/60 hover:text-ink hover:bg-ink/5 rounded-md px-3 py-1.5 transition-colors flex items-center justify-between gap-2"
-                  >
-                    <span className="truncate">{genre}</span>
-                    <span className="text-ink/30 shrink-0">{count}</span>
-                  </Link>
-                ))}
-              </nav>
+            <div className="mt-6 px-3">
+              <p className="text-xs font-bold text-ink/40 mb-2 tracking-wide">類別</p>
+              <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                {genres.map(([genre, count]) => {
+                  const color = getGenreColor(genre);
+                  return (
+                    <Link
+                      key={genre}
+                      href={`/?genre=${encodeURIComponent(genre)}#stories`}
+                      className="text-[11px] font-bold px-2 py-1 rounded-full transition-transform hover:-translate-y-0.5"
+                      style={{ color: color.text, background: color.bg }}
+                    >
+                      {genre}
+                      <span className="opacity-50 font-normal ml-1">{count}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           )}
 

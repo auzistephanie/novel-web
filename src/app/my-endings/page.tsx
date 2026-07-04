@@ -85,7 +85,7 @@ export default async function MyEndingsPage() {
       {hasEndings && (
         <div className="relative pl-6">
           <div
-            className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-ink/10"
+            className="absolute left-[3px] top-2 bottom-2 w-2.5 tile-pattern-vertical opacity-40"
             aria-hidden="true"
           />
           <div className="space-y-8">

@@ -33,6 +33,20 @@ export default function StoryCard({
         style={{ background: color.bar }}
         aria-hidden="true"
       />
+      <svg
+        className="absolute -top-2 -right-2"
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        aria-hidden="true"
+      >
+        <path
+          d="M10 1 L19 10 L10 19 L1 10Z"
+          fill="#f6efe0"
+          stroke={color.bar}
+          strokeWidth="1.5"
+        />
+      </svg>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
