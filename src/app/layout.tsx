@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "爽文快遞",
   description:
-    "每日一頁，爽到停唔到 — AI 生成中文網絡爽文，記低你鍾意嘅故事，換返專屬結局。",
+    "每日一篇，精彩到停不下來 — AI 生成中文網絡小說，記錄您喜歡的故事，獲得專屬結局。",
 };
 
 export default function RootLayout({
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-cream text-ink">
         <NavBar />
         {children}
+        <Footer />
       </body>
     </html>
   );

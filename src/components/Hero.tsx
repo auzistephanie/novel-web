@@ -20,26 +20,26 @@ export default function Hero() {
             🔥 AI 即時生成 · 每日更新
           </div>
           <h1 className="font-serif font-black text-3xl sm:text-4xl leading-tight mb-4">
-            每日一頁，
+            每日一篇，
             <br />
-            <span className="text-brick">爽</span>到停唔到
+            <span className="text-brick">精彩</span>到停不下來
           </h1>
           <p className="text-ink/70 text-sm sm:text-base max-w-md mb-6">
-            重生逆襲、馬甲文、系統流、穿書反派任揀——㩒鍾意記低你嘅口味，AI
-            會幫你生成專屬呢個故事嘅個人化結局。
+            重生逆襲、馬甲文、系統流、穿書反派任您選擇——點擊喜歡記錄您的偏好，
+            AI 將為您生成這個故事的專屬結局。
           </p>
           <div className="flex gap-3 flex-wrap">
             <Link
               href="/login"
               className="bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
             >
-              登入開始追更 →
+              登入開始閱讀 →
             </Link>
             <a
               href="#stories"
               className="border-2 border-ink font-bold rounded-md px-6 py-3"
             >
-              睇下今日故事
+              查看今日故事
             </a>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function Hero() {
         </div>
         <div>
           <b className="font-serif font-black text-2xl text-indigo block">1</b>
-          <span className="text-xs text-ink/50">專屬你嘅結局</span>
+          <span className="text-xs text-ink/50">專屬您的結局</span>
         </div>
       </div>
     </section>

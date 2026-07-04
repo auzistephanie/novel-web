@@ -43,7 +43,7 @@ export default function StoryCard({
         href={`/story/${story.id}`}
         className="text-sm font-bold text-brick self-start"
       >
-        繼續睇 →
+        繼續閱讀 →
       </Link>
     </div>
   );

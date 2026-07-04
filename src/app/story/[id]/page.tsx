@@ -45,42 +45,55 @@ export default async function StoryPage({
 
   return (
     <main className="flex-1 max-w-2xl w-full mx-auto px-5 py-10">
-      <span className="text-xs font-bold tracking-wide text-indigo bg-indigo/10 px-2 py-1 rounded-full">
-        {story.genre}
-      </span>
-      <div className="flex items-start justify-between gap-4 mt-3">
-        <h1 className="font-serif font-black text-2xl leading-snug">
+      <div className="bg-white border border-ink/10 rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0_rgba(43,37,32,0.12)]">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <span className="text-xs font-bold tracking-wide text-indigo bg-indigo/10 px-2.5 py-1 rounded-full">
+            {story.genre}
+          </span>
+          <LikeButton storyId={story.id} liked={liked} loggedIn={!!user} />
+        </div>
+
+        <h1 className="font-serif font-black text-2xl leading-snug mt-4">
           {story.title}
         </h1>
-        <LikeButton storyId={story.id} liked={liked} loggedIn={!!user} />
+        {story.protagonist && (
+          <p className="text-sm text-ink/50 mt-1">主角：{story.protagonist}</p>
+        )}
+
+        <article className="mt-6 whitespace-pre-wrap leading-8 text-ink/85">
+          {story.content}
+        </article>
       </div>
-      {story.protagonist && (
-        <p className="text-sm text-ink/50 mt-1">主角：{story.protagonist}</p>
-      )}
 
-      <article className="mt-6 whitespace-pre-wrap leading-8 text-ink/85">
-        {story.content}
-      </article>
+      <div className="mt-8 bg-mustard/10 border border-mustard/30 rounded-2xl p-6 sm:p-8">
+        <h2 className="font-serif font-bold text-lg mb-3">專屬結局</h2>
 
-      <div className="mt-10 border-t border-ink/15 pt-6">
-        <h2 className="font-bold text-lg mb-2">專屬結局</h2>
         {!user && (
-          <p className="text-sm text-ink/50">
-            登入＋㩒鍾意，等 scheduled task 幫你生成專屬結局。
-          </p>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-ink/60">
+              登入並點擊喜歡，系統會為您生成專屬結局。
+            </p>
+            <LikeButton storyId={story.id} liked={false} loggedIn={false} size="lg" />
+          </div>
         )}
+
         {user && !liked && (
-          <p className="text-sm text-ink/50">㩒下面個心先，先會幫你生成結局。</p>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-ink/60">
+              點擊下方按鈕表示喜歡，系統將為您生成專屬結局。
+            </p>
+            <LikeButton storyId={story.id} liked={liked} loggedIn={!!user} size="lg" />
+          </div>
         )}
+
         {user && liked && !ending && (
-          <p className="text-sm text-ink/50">
-            生成緊……下次 scheduled task 跑完就有。
+          <p className="text-sm text-ink/60">
+            正在生成中，請耐心等候下一次系統排程完成。
           </p>
         )}
+
         {ending && (
-          <p className="whitespace-pre-wrap leading-8 text-ink/85 bg-mustard/10 rounded-lg p-4">
-            {ending}
-          </p>
+          <p className="whitespace-pre-wrap leading-8 text-ink/85">{ending}</p>
         )}
       </div>
     </main>

@@ -1,4 +1,4 @@
-import { login, signup, loginWithGoogle } from "./actions";
+import { loginWithGoogle } from "./actions";
 
 export default async function LoginPage({
   searchParams,
@@ -26,7 +26,7 @@ export default async function LoginPage({
         </div>
         <h1 className="font-serif text-2xl font-black mb-1">爽文快遞</h1>
         <p className="text-sm text-ink/60 mb-6">
-          登入睇故事、記錄鍾意，換返專屬結局。
+          登入即可閱讀故事、記錄喜歡，並獲得專屬結局。
         </p>
 
         {params.error && (
@@ -43,7 +43,7 @@ export default async function LoginPage({
         <form action={loginWithGoogle}>
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 border-2 border-ink rounded-md py-2 font-bold bg-white shadow-[3px_3px_0_rgba(43,37,32,0.25)] mb-5"
+            className="w-full flex items-center justify-center gap-2 border-2 border-ink rounded-md py-3 font-bold bg-white shadow-[3px_3px_0_rgba(43,37,32,0.25)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-transform"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
               <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
@@ -51,55 +51,13 @@ export default async function LoginPage({
               <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.98A9 9 0 0 0 0 9c0 1.45.35 2.83.98 4.05l2.99-2.33Z"/>
               <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .98 4.95l2.99 2.33C4.68 5.16 6.66 3.58 9 3.58Z"/>
             </svg>
-            用 Google 登入
+            使用 Google 帳號登入
           </button>
         </form>
 
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-ink/15" />
-          <span className="text-xs text-ink/40">或者用 email</span>
-          <div className="flex-1 h-px bg-ink/15" />
-        </div>
-
-        <form className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-ink/60 mb-1">
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full border border-ink/30 rounded-md px-3 py-2 bg-cream/60"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-ink/60 mb-1">
-              密碼（最少 6 位）
-            </label>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={6}
-              className="w-full border border-ink/30 rounded-md px-3 py-2 bg-cream/60"
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              formAction={login}
-              className="flex-1 bg-brick text-cream font-bold rounded-md py-2 shadow-[3px_3px_0_rgba(43,37,32,0.6)]"
-            >
-              登入
-            </button>
-            <button
-              formAction={signup}
-              className="flex-1 border-2 border-ink font-bold rounded-md py-2"
-            >
-              註冊
-            </button>
-          </div>
-        </form>
+        <p className="text-xs text-ink/40 mt-6 text-center">
+          目前僅支援 Google 帳號登入
+        </p>
       </div>
     </main>
   );

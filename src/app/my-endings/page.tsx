@@ -28,14 +28,14 @@ export default async function MyEndingsPage() {
 
   return (
     <main className="flex-1 max-w-2xl w-full mx-auto px-5 py-10">
-      <h1 className="font-black text-3xl mb-1">我嘅結局</h1>
+      <h1 className="font-serif font-black text-3xl mb-1">我的結局</h1>
       <p className="text-ink/60 mb-8">
-        你鍾意過嘅故事，AI 幫你寫嘅專屬結局都喺呢度。
+        您喜歡過的故事，AI 為您撰寫的專屬結局都在這裡。
       </p>
 
       {(!endings || endings.length === 0) && (
         <div className="border border-dashed border-ink/30 rounded-xl p-10 text-center text-ink/50">
-          仲未有結局——去故事牆㩒返幾個鍾意先。
+          尚未有結局，請先到故事牆點擊喜歡幾個故事。
         </div>
       )}
 

@@ -39,13 +39,13 @@ export default async function HomePage() {
         <h1 className="font-serif font-black text-3xl mb-1">故事牆</h1>
         <p className="text-ink/60 mb-8">
           {user
-            ? "㩒鍾意記低你嘅口味，之後幫你生成專屬結局。"
-            : "登入先可以記錄鍾意同攞專屬結局。"}
+            ? "點擊喜歡記錄您的偏好，系統將為您生成專屬結局。"
+            : "登入後即可記錄喜歡，並獲得專屬結局。"}
         </p>
 
         {(!stories || stories.length === 0) && (
           <div className="border border-dashed border-ink/30 rounded-xl p-10 text-center text-ink/50">
-            仲未有故事——等 scheduled task 生成緊，或者手動觸發一次。
+            尚未有故事，系統正在生成中，請稍候。
           </div>
         )}
 

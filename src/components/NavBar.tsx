@@ -20,7 +20,7 @@ export default async function NavBar() {
           </Link>
           {user && (
             <Link href="/my-endings" className="text-ink/70 hover:text-ink">
-              我嘅結局
+              我的結局
             </Link>
           )}
           {user ? (

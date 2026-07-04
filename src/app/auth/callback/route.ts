@@ -18,6 +18,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    `${origin}/login?error=${encodeURIComponent("Google 登入失敗，冇收到授權碼")}`
+    `${origin}/login?error=${encodeURIComponent("Google 登入失敗，未收到授權碼")}`
   );
 }
