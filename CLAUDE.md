@@ -42,6 +42,10 @@ App 名由「爽文快遞」改做「**顧事**」——同「故事」喺國語
 
 ✅ 短篇/連載分流已落實（2026-07-05）：見上面「內容型態」一節。
 
+## Hero 插畫（2026-07-05 定案）
+
+`src/components/Hero.tsx` 右側插畫試過幾個方向：書店招牌（太不相干）→ 花磚馬賽克摺書（太肉酸）→ 純花磚板＋印章（過渡版，加埋兩粒浮動燈泡裝飾）。**最終定案：金啡漸層長毛貓仔瞓喺三本疊起嘅書上面**（尾巴捲埋嚟，燈泡裝飾已移除）。全部手畫 SVG primitive（ellipse/circle/path＋`linearGradient`），冇用外部圖庫。日後想再改插畫方向，直接喺呢個檔案改，唔使再重新諗過整個概念。
+
 ## 開發須知
 
 - `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— host↔sandbox 嘅 FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
