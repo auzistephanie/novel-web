@@ -12,7 +12,7 @@ export default async function NavBar() {
     <header className="border-b border-ink/10 bg-cream/90 backdrop-blur sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-5 py-3 flex items-center justify-between">
         <Link href="/" className="font-serif font-black text-lg">
-          爽文快遞
+          顧事
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/" className="text-ink/70 hover:text-ink">

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "爽文快遞",
+  title: "顧事",
   description:
     "每日一篇，精彩到停不下來 — AI 生成中文網絡小說，記錄您喜歡的故事，獲得專屬結局。",
 };

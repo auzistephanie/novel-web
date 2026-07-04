@@ -1,4 +1,4 @@
-# CLAUDE.md — 爽文快遞 novel-web
+# CLAUDE.md — 顧事 novel-web
 
 由 `daily-novel`（Telegram bot 版）獨立分拆出嚟嘅網站產品。唔再推 Telegram，改做正式登入網站：故事牆、㩒鍾意、AI 定時生成個人化結局。
 
@@ -27,6 +27,12 @@
 已上線：**https://novel-web-sepia.vercel.app**（Vercel project `novel-web`，接返 GitHub main branch，push 會自動 redeploy）。
 
 ⚠️ 之前部署曾撞 `EBADPLATFORM`：`package.json` 嘅 `dependencies` 唔可以出現任何 `@next/swc-linux-*-gnu` / `lightningcss-*` 呢類平台專用 optional binary package（呢啲應該由 npm 喺 build 機自動根據平台揀，唔應該手動 `npm install <pkg> --force` 加落 dependencies，否則會變成強制要求，喺唔同 CPU 架構嘅 build 機度必撞版）。
+
+## 品牌名（2026-07-05 改名）
+
+App 名由「爽文快遞」改做「**顧事**」——同「故事」喺國語＋粵語都完全同音，雙關「照顧/講究事情」，2 字精煉。全站（metadata、NavBar、Footer、Hero SVG 插畫、login page）已同步改名。
+
+⚠️ 待決：Stephanie 提出而家內容全部強制 cliffhanger 收尾（連載感），但 Telegram 版原本設計係「單篇完整故事」為預設、「連載」先係讀者評分高先觸發嘅加碼選項（見 `daily-novel/docs/SYSTEMS.md`）。novel-web 未來可能要加返「短篇」（完整結局，唔連載）呢個內容型態，構想係故事表加 `story_type`（'short'/'serial'）欄位＋前端加篩選，但呢部分做法仲未 confirm，唔好未問過先落實。
 
 ## 開發須知
 

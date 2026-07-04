@@ -22,9 +22,9 @@ export default async function LoginPage({
           className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-mustard border-2 border-ink flex items-center justify-center text-xs font-black rotate-12"
           aria-hidden="true"
         >
-          爽
+          顧
         </div>
-        <h1 className="font-serif text-2xl font-black mb-1">爽文快遞</h1>
+        <h1 className="font-serif text-2xl font-black mb-1">顧事</h1>
         <p className="text-sm text-ink/60 mb-6">
           登入即可閱讀故事、記錄喜歡，並獲得專屬結局。
         </p>

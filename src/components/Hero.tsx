@@ -75,10 +75,11 @@ export default function Hero({
               textAnchor="middle"
               fontFamily="Noto Serif TC, serif"
               fontWeight="900"
-              fontSize="13"
+              fontSize="15"
+              letterSpacing="6"
               fill="#f6efe0"
             >
-              爽 文 快 遞
+              顧　事
             </text>
             <g>
               <rect x="46" y="96" width="18" height="24" fill="#3a5f8a" />
