@@ -52,6 +52,14 @@ App 名由「爽文快遞」改做「**顧事**」——同「故事」喺國語
 
 根據 Hero 貓仔貼紙圖嘅書皮花紋，提議過 3 個全站視覺升級方向（A 典藏書卷最豐富／B 輕奢克制／C 復古藏書票），Stephanie 揀咗 **B（輕奢克制）**：唔大改版面結構，淨係將花磚圖案由單層菱格升級做**雙層菱格紋**（外層靛藍描邊＋內層新加嘅酒紅 `#7a3b32` 描邊＋磚紅中心點），套用晒 `TileDivider.tsx`、`globals.css` 嘅 `.tile-pattern-bg`／`.tile-pattern-vertical`（sidebar／footer／login／my-endings 全部連帶更新），加埋 `genreColor.ts` 第 5 隻色「酒紅」入類別調色盤。冇改 StoryCard 版面結構、冇加燙金角花（嗰啲係 A 方案先有，冇落實）。
 
+### 底色轉白＋花磚透明度加高（2026-07-05 追加）
+
+Stephanie 睇完 B 方案覺得花磚太隱（sidebar 淨 5% opacity 幾乎睇唔出），要求：1) 圖案透明度加高至睇得出；2) 全站底色由米黃 `#f6efe0` 轉做白色。落實做法：
+- `globals.css` 嘅 `--background` 由 `#f6efe0` 改做 `#ffffff`（`--color-cream` 保留唔變，依然係 `#f6efe0`，改做「卡片強調色」用）
+- 花磚圖案 opacity：sidebar `NavBar.tsx` 由 `.05`→`.16`，login page 由 `.08`→`.18`
+- 原本 `bg-white/60` 嘅卡片（`StoryCard.tsx`、`my-endings` 結局卡、`story/[id]` 內文框、login 卡片）全部改做實色 `bg-cream`，喺白色頁面上做返卡片同背景嘅對比（以前係「米黃頁面＋白卡片」，而家反轉做「白頁面＋米黃卡片」）
+- `TileDivider.tsx` 淺色版本嘅 rect 底色維持 `#f6efe0`（唔跟住轉白），刻意保留米黃做 divider 嘅強調條
+
 ## 開發須知
 
 - `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— host↔sandbox 嘅 FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
