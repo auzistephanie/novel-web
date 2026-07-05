@@ -48,6 +48,10 @@ App 名由「爽文快遞」改做「**顧事**」——同「故事」喺國語
 
 ⚠️ 呢張圖嘅來源／授權由 Stephanie 確認（佢話係「AI 生成」），先當自己有權用。日後如果要換第二張圖，直接換 `public/hero-cat.png` 呢個檔案（記得先確認新圖版權／授權），Hero.tsx 嘅 `<Image>` 唔使改。
 
+## 花磚圖案 + 配色（2026-07-05，B 方案定案）
+
+根據 Hero 貓仔貼紙圖嘅書皮花紋，提議過 3 個全站視覺升級方向（A 典藏書卷最豐富／B 輕奢克制／C 復古藏書票），Stephanie 揀咗 **B（輕奢克制）**：唔大改版面結構，淨係將花磚圖案由單層菱格升級做**雙層菱格紋**（外層靛藍描邊＋內層新加嘅酒紅 `#7a3b32` 描邊＋磚紅中心點），套用晒 `TileDivider.tsx`、`globals.css` 嘅 `.tile-pattern-bg`／`.tile-pattern-vertical`（sidebar／footer／login／my-endings 全部連帶更新），加埋 `genreColor.ts` 第 5 隻色「酒紅」入類別調色盤。冇改 StoryCard 版面結構、冇加燙金角花（嗰啲係 A 方案先有，冇落實）。
+
 ## 開發須知
 
 - `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— host↔sandbox 嘅 FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
