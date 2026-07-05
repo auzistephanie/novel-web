@@ -14,6 +14,7 @@
   --color-indigo: #3a5f8a;
   --color-mustard: #c99a3c;
   --color-wine: #7a3b32;
+  --color-gold-soft: #d6bd7e;
   --font-sans: "Noto Sans TC", var(--font-geist-sans), "PingFang HK", sans-serif;
   --font-serif: "Noto Serif TC", "PMingLiU", serif;
   --font-num: "Fraunces", serif;
@@ -63,8 +64,78 @@ body {
   animation: drift 8s ease-in-out infinite;
 }
 
+/* ===== 書本封面 · 揭書入場（開場動畫用） ===== */
+.cloth-tex {
+  background-color: #1f4a3a;
+  background-image: radial-gradient(
+      ellipse at 30% 12%,
+      rgba(255, 255, 255, 0.08),
+      transparent 55%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.05) 0 1px,
+      transparent 1px 3px
+    );
+}
+.tile-huazhuan-vertical {
+  background-color: #234c3b;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23234c3b'/%3E%3Cg fill='none' stroke='%23b78f3f' stroke-width='1.2'%3E%3Ccircle cx='0' cy='0' r='15'/%3E%3Ccircle cx='40' cy='0' r='15'/%3E%3Ccircle cx='0' cy='40' r='15'/%3E%3Ccircle cx='40' cy='40' r='15'/%3E%3Ccircle cx='20' cy='20' r='15'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='2' fill='%23e8d6a8'/%3E%3C/svg%3E");
+  background-repeat: repeat-y;
+  background-position: center top;
+}
+
+@keyframes bookOpen {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-172deg);
+  }
+}
+@keyframes entranceFade {
+  0%,
+  72% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.entrance-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 2200px;
+  background: radial-gradient(ellipse at 50% 35%, #2a2118, #14100b);
+  animation: entranceFade 2.1s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+.entrance-cover {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  animation: bookOpen 1.25s cubic-bezier(0.62, 0, 0.25, 1) 0.55s forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-el {
     animation: none;
+  }
+  .entrance-stage {
+    animation: entranceFade 0.4s linear forwards;
+  }
+  .entrance-cover {
+    animation: none;
+    opacity: 0;
   }
 }

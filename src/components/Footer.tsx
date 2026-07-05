@@ -1,9 +1,6 @@
-import TileDivider from "./TileDivider";
-
 export default function Footer() {
   return (
-    <footer className="mt-auto bg-ink text-cream/70">
-      <TileDivider dark />
+    <footer className="mt-auto bg-ink text-cream/70 border-t border-ink/40">
       <div className="max-w-4xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 font-serif font-black text-cream">
           <span className="w-2.5 h-2.5 rounded-full bg-brick inline-block" />

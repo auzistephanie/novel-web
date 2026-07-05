@@ -1,6 +1,73 @@
 import Link from "next/link";
 import Image from "next/image";
 
+type Copy = {
+  badge: string;
+  pre: string;
+  accent: string;
+  post: string;
+  sub: string;
+};
+
+const COPY: Copy[] = [
+  {
+    badge: "今日新章 · 已上架",
+    pre: "翻開，就",
+    accent: "回不去",
+    post: "了",
+    sub: "重生、逆襲、穿書、馬甲——踏進去，便是另一場人生。",
+  },
+  {
+    badge: "你選 · AI 為你續寫",
+    pre: "誰說結局，不能",
+    accent: "重寫",
+    post: "？",
+    sub: "輕觸喜歡，故事的收筆，交由你決定。",
+  },
+  {
+    badge: "每日上新",
+    pre: "這一次，換你當",
+    accent: "主角",
+    post: "",
+    sub: "選一個世界，活一段你從未活過的人生。",
+  },
+  {
+    badge: "顧事 · 每日小說",
+    pre: "你錯過的人生，這裡",
+    accent: "都有",
+    post: "",
+    sub: "一日一個故事，替你補完每一種可能。",
+  },
+  {
+    badge: "短篇・連載 任你追",
+    pre: "看到最後一頁，你會",
+    accent: "捨不得",
+    post: "",
+    sub: "一次讀完，或每日追更——由你選擇節奏。",
+  },
+  {
+    badge: "每日一章 · 隨心翻閱",
+    pre: "翻開一頁，換一種",
+    accent: "人生",
+    post: "",
+    sub: "重生、逆襲、穿書、馬甲——每個故事，都有一個等你的結局。",
+  },
+  {
+    badge: "今日新故事 · 已上架",
+    pre: "今日，你想成為",
+    accent: "誰",
+    post: "？",
+    sub: "重生逆襲，還是穿書反派？選一個世界，縱身跳入。",
+  },
+  {
+    badge: "顧事 · 每日小說",
+    pre: "好故事，總得有人",
+    accent: "顧著",
+    post: "",
+    sub: "一日一個故事，替你守著每一段未說完的人生。",
+  },
+];
+
 export default function Hero({
   loggedIn = false,
   storyCount = 0,
@@ -8,6 +75,8 @@ export default function Hero({
   loggedIn?: boolean;
   storyCount?: number;
 }) {
+  const copy = COPY[Math.floor(Math.random() * COPY.length)];
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -24,16 +93,15 @@ export default function Hero({
       <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-10 grid md:grid-cols-[1.1fr_.9fr] gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-brick bg-brick/10 px-3 py-1.5 rounded-full mb-5">
-            🔥 AI 定時更新 · 一日兩批
+            🔥 {copy.badge}
           </div>
           <h1 className="font-serif font-black text-3xl sm:text-4xl leading-tight mb-4">
-            每日一篇，
-            <br />
-            <span className="text-brick">精彩</span>到停不下來
+            {copy.pre}
+            <span className="text-brick">{copy.accent}</span>
+            {copy.post}
           </h1>
           <p className="text-ink/70 text-sm sm:text-base max-w-md mb-3">
-            重生逆襲、馬甲文、系統流、穿書反派任您選擇——點擊喜歡記錄您的偏好，
-            AI 將為您生成這個故事的專屬結局。
+            {copy.sub}
           </p>
           <p className="text-ink/50 text-xs sm:text-sm max-w-md mb-6">
             想追更就睇「每日連載」，想一次睇晒就揀「短篇故事」——兩種節奏，任您揀。
