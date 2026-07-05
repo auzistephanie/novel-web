@@ -45,7 +45,7 @@ export default async function StoryPage({
 
   return (
     <main className="flex-1 max-w-2xl w-full mx-auto px-5 py-10">
-      <div className="bg-white border border-ink/10 rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0_rgba(43,37,32,0.12)]">
+      <div className="bg-cream border border-ink/10 rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0_rgba(43,37,32,0.12)]">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <span className="text-xs font-bold tracking-wide text-indigo bg-indigo/10 px-2.5 py-1 rounded-full">
             {story.genre}

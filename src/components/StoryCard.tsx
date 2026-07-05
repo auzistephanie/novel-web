@@ -26,7 +26,7 @@ export default function StoryCard({
 
   return (
     <div
-      className="group relative border border-ink/15 rounded-xl bg-white/60 p-5 pl-6 flex flex-col gap-3 shadow-[3px_3px_0_rgba(43,37,32,0.15)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[5px_6px_0_rgba(43,37,32,0.2)]"
+      className="group relative border border-ink/15 rounded-xl bg-cream p-5 pl-6 flex flex-col gap-3 shadow-[3px_3px_0_rgba(43,37,32,0.15)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[5px_6px_0_rgba(43,37,32,0.2)]"
     >
       <span
         className="absolute left-0 top-3 bottom-3 w-1.5 rounded-full"

@@ -99,7 +99,7 @@ export default async function MyEndingsPage() {
                     style={{ background: color.bar }}
                     aria-hidden="true"
                   />
-                  <div className="border border-ink/15 rounded-xl p-5 bg-white/60 shadow-[3px_3px_0_rgba(43,37,32,0.12)]">
+                  <div className="border border-ink/15 rounded-xl p-5 bg-cream shadow-[3px_3px_0_rgba(43,37,32,0.12)]">
                     <div className="flex items-center justify-between mb-1 gap-3">
                       <Link
                         href={`/story/${e.story_id}`}

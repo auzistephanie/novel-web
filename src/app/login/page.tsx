@@ -10,10 +10,10 @@ export default async function LoginPage({
   return (
     <main className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
       <div
-        className="absolute inset-0 tile-pattern-bg opacity-[.08] pointer-events-none"
+        className="absolute inset-0 tile-pattern-bg opacity-[.18] pointer-events-none"
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-sm bg-white border-2 border-ink rounded-xl p-8 shadow-[5px_5px_0_rgba(43,37,32,0.9)]">
+      <div className="relative w-full max-w-sm bg-cream border-2 border-ink rounded-xl p-8 shadow-[5px_5px_0_rgba(43,37,32,0.9)]">
         <div
           className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-mustard border-2 border-ink flex items-center justify-center text-xs font-black rotate-12"
           aria-hidden="true"

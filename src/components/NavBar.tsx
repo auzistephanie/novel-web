@@ -24,7 +24,7 @@ export default async function NavBar() {
       {/* 桌面版：左側直向 side menu */}
       <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 md:h-screen md:sticky md:top-0 md:relative border-r border-ink/10 bg-cream/90 backdrop-blur px-4 py-6 overflow-y-auto">
         <div
-          className="absolute inset-0 tile-pattern-bg opacity-[.05] pointer-events-none"
+          className="absolute inset-0 tile-pattern-bg opacity-[.16] pointer-events-none"
           aria-hidden="true"
         />
         <div className="relative flex flex-col flex-1">
