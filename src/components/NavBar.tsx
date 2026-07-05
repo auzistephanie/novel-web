@@ -24,13 +24,19 @@ export default async function NavBar() {
       {/* 桌面版：左側直向 side menu */}
       <aside className="hidden md:flex md:flex-col md:w-52 md:shrink-0 md:h-screen md:sticky md:top-0 md:relative border-r border-ink/10 bg-cream/90 backdrop-blur px-4 py-6 overflow-y-auto">
         <div
-          className="absolute inset-0 tile-pattern-bg opacity-[.16] pointer-events-none"
+          className="absolute top-0 right-0 bottom-0 w-[3px]"
+          style={{ background: "linear-gradient(180deg, #7a3b32, #c99a3c 50%, #7a3b32)" }}
           aria-hidden="true"
         />
         <div className="relative flex flex-col flex-1">
-          <Link href="/" className="font-serif font-black text-xl mb-8 px-3">
+          <Link href="/" className="font-serif font-black text-xl px-3 block">
             顧事
           </Link>
+          <div
+            className="h-px mx-3 mb-8 mt-2"
+            style={{ background: "linear-gradient(90deg, #7a3b32, #c99a3c, transparent)" }}
+            aria-hidden="true"
+          />
           <nav className="flex flex-col gap-1">
             <Link href="/#short-stories" className={linkClass}>
               短篇故事
@@ -86,7 +92,12 @@ export default async function NavBar() {
       </aside>
 
       {/* 手機版：頂部橫向 bar */}
-      <header className="flex md:hidden border-b border-ink/10 bg-cream/90 backdrop-blur sticky top-0 z-50">
+      <header className="relative flex md:hidden bg-cream/90 backdrop-blur sticky top-0 z-50">
+        <div
+          className="absolute left-0 right-0 bottom-0 h-[3px]"
+          style={{ background: "linear-gradient(90deg, #7a3b32, #c99a3c, #7a3b32)" }}
+          aria-hidden="true"
+        />
         <div className="w-full px-5 py-3 flex items-center justify-between">
           <Link href="/" className="font-serif font-black text-lg">
             顧事
