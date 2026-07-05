@@ -3,6 +3,7 @@ const PALETTE = [
   { bar: "#3a5f8a", text: "#3a5f8a", bg: "rgba(58,95,138,0.1)" }, // indigo
   { bar: "#c99a3c", text: "#a97e26", bg: "rgba(201,154,60,0.15)" }, // mustard
   { bar: "#2f4a3e", text: "#2f4a3e", bg: "rgba(47,74,62,0.1)" }, // forest
+  { bar: "#7a3b32", text: "#7a3b32", bg: "rgba(122,59,50,0.1)" }, // wine
 ];
 
 export function getGenreColor(genre: string) {

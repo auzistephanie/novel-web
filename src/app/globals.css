@@ -13,6 +13,7 @@
   --color-brick: #c1503a;
   --color-indigo: #3a5f8a;
   --color-mustard: #c99a3c;
+  --color-wine: #7a3b32;
   --font-sans: "Noto Sans TC", var(--font-geist-sans), "PingFang HK", sans-serif;
   --font-serif: "Noto Serif TC", "PMingLiU", serif;
   --font-num: "Fraunces", serif;
@@ -39,12 +40,12 @@ body {
 }
 
 .tile-pattern-bg {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='22'%3E%3Cpath d='M18 2 L34 11 L18 20 L2 11Z' fill='none' stroke='%233a5f8a' stroke-width='1.5'/%3E%3Ccircle cx='0' cy='0' r='1.8' fill='%23c1503a'/%3E%3Ccircle cx='36' cy='22' r='1.8' fill='%23c1503a'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='22'%3E%3Cpath d='M18 2 L34 11 L18 20 L2 11Z' fill='none' stroke='%233a5f8a' stroke-width='1.4'/%3E%3Cpath d='M18 6.5 L25.5 11 L18 15.5 L10.5 11Z' fill='none' stroke='%237a3b32' stroke-width='0.9'/%3E%3Ccircle cx='0' cy='0' r='1.8' fill='%23c1503a'/%3E%3Ccircle cx='36' cy='22' r='1.8' fill='%23c1503a'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 
 .tile-pattern-vertical {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16'%3E%3Cpath d='M5 1 L9 8 L5 15 L1 8Z' fill='none' stroke='%233a5f8a' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16'%3E%3Cpath d='M5 1 L9 8 L5 15 L1 8Z' fill='none' stroke='%233a5f8a' stroke-width='1.1'/%3E%3Cpath d='M5 4.5 L7.2 8 L5 11.5 L2.8 8Z' fill='none' stroke='%237a3b32' stroke-width='0.7'/%3E%3C/svg%3E");
   background-repeat: repeat-y;
   background-position: top center;
 }
