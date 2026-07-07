@@ -22,7 +22,7 @@ const COPY: Copy[] = [
     pre: "誰說結局，不能",
     accent: "重寫",
     post: "？",
-    sub: "輕觸喜歡，故事的收筆，交由你決定。",
+    sub: "揀一個劇情走向，故事的收筆，交由你決定。",
   },
   {
     badge: "每日上新",
@@ -39,18 +39,11 @@ const COPY: Copy[] = [
     sub: "一日一個故事，替你補完每一種可能。",
   },
   {
-    badge: "短篇・連載 任你追",
+    badge: "互動結局 · 由你決定",
     pre: "看到最後一頁，你會",
     accent: "捨不得",
     post: "",
-    sub: "一次讀完，或每日追更——由你選擇節奏。",
-  },
-  {
-    badge: "每日一章 · 隨心翻閱",
-    pre: "翻開一頁，換一種",
-    accent: "人生",
-    post: "",
-    sub: "重生、逆襲、穿書、馬甲——每個故事，都有一個等你的結局。",
+    sub: "短篇一次讀完，或親手為故事寫下專屬結局。",
   },
   {
     badge: "今日新故事 · 已上架",
@@ -90,7 +83,7 @@ export default function Hero({
         />
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-10 grid md:grid-cols-[1.1fr_.9fr] gap-8 items-center">
+      <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-8 grid md:grid-cols-[1.1fr_.9fr] gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-brick bg-brick/10 px-3 py-1.5 rounded-full mb-5">
             🔥 {copy.badge}
@@ -100,11 +93,8 @@ export default function Hero({
             <span className="text-brick">{copy.accent}</span>
             {copy.post}
           </h1>
-          <p className="text-ink/70 text-sm sm:text-base max-w-md mb-3">
+          <p className="text-ink/70 text-sm sm:text-base max-w-md mb-6">
             {copy.sub}
-          </p>
-          <p className="text-ink/50 text-xs sm:text-sm max-w-md mb-6">
-            想追更就睇「每日連載」，想一次睇晒就揀「短篇故事」——兩種節奏，任您揀。
           </p>
           <div className="flex gap-3 flex-wrap">
             {!loggedIn && (
@@ -115,22 +105,22 @@ export default function Hero({
                 登入開始閱讀 →
               </Link>
             )}
-            <a
-              href="#short-stories"
+            <Link
+              href="/short"
               className={
                 loggedIn
                   ? "bg-brick text-cream font-bold rounded-md px-6 py-3 shadow-[4px_4px_0_rgba(43,37,32,0.7)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
                   : "border-2 border-ink font-bold rounded-md px-6 py-3"
               }
             >
-              查看短篇故事 →
-            </a>
-            <a
-              href="#serial-stories"
+              短篇故事 →
+            </Link>
+            <Link
+              href="/serial"
               className="border-2 border-ink font-bold rounded-md px-6 py-3"
             >
-              查看每日連載 →
-            </a>
+              互動結局 →
+            </Link>
           </div>
         </div>
 
@@ -149,7 +139,7 @@ export default function Hero({
       <div className="flex gap-8 max-w-4xl mx-auto px-5 pb-2 flex-wrap">
         <div>
           <b className="font-serif font-black text-2xl text-indigo block">25</b>
-          <span className="text-xs text-ink/50">加權類別池</span>
+          <span className="text-xs text-ink/50">加權題材池</span>
         </div>
         <div>
           <b className="font-serif font-black text-2xl text-indigo block">2</b>

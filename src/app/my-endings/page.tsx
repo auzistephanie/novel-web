@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGenreColor } from "@/lib/genreColor";
 import StoryExcerptToggle from "@/components/StoryExcerptToggle";
+import RecommendedStories from "@/components/RecommendedStories";
 
 export const revalidate = 0;
 
 type EndingRow = {
   id: string;
   ending_content: string;
+  choice_text: string | null;
   created_at: string;
   story_id: string;
   novel_stories: { title: string; genre: string; content: string } | null;
@@ -30,7 +32,7 @@ export default async function MyEndingsPage() {
 
   const { data: endings } = await supabase
     .from("novel_endings")
-    .select("id, ending_content, created_at, story_id, novel_stories(title, genre, content)")
+    .select("id, ending_content, choice_text, created_at, story_id, novel_stories(title, genre, content)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .returns<EndingRow[]>();
@@ -41,8 +43,10 @@ export default async function MyEndingsPage() {
     <main className="flex-1 max-w-2xl w-full mx-auto px-5 py-10">
       <h1 className="font-serif font-black text-3xl mb-1">我的結局本</h1>
       <p className="text-ink/60 mb-8">
-        您喜歡過的故事，AI 為您撰寫的專屬結局都在這裡。
+        由您親自選擇劇情走向，AI 為您撰寫的專屬結局都在這裡。
       </p>
+
+      <RecommendedStories limit={4} />
 
       {!hasEndings && (
         <div className="relative border-2 border-dashed border-ink/25 rounded-2xl p-10 text-center overflow-hidden">
@@ -119,6 +123,14 @@ export default async function MyEndingsPage() {
                     </p>
                     {e.novel_stories?.content && (
                       <StoryExcerptToggle content={e.novel_stories.content} />
+                    )}
+                    {e.choice_text && (
+                      <p className="text-xs text-ink/60 mb-2">
+                        你的選擇：
+                        <span className="font-bold text-ink/80">
+                          {e.choice_text}
+                        </span>
+                      </p>
                     )}
                     <p className="text-xs font-bold text-brick mb-2 tracking-wide">
                       ● 專屬結局

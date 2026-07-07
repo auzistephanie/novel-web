@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
-import { getGenreColor } from "@/lib/genreColor";
 
 export default async function NavBar() {
   const supabase = await createClient();
@@ -9,15 +8,30 @@ export default async function NavBar() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: genreRows } = await supabase.from("novel_stories").select("genre");
-  const genreCounts = new Map<string, number>();
-  for (const row of genreRows ?? []) {
-    genreCounts.set(row.genre, (genreCounts.get(row.genre) ?? 0) + 1);
-  }
-  const genres = Array.from(genreCounts.entries()).sort((a, b) => b[1] - a[1]);
-
   const linkClass =
     "text-sm text-ink/70 hover:text-ink hover:bg-ink/5 rounded-md px-3 py-2 transition-colors";
+
+  const navItems = (
+    <>
+      <Link href="/" className={linkClass}>
+        首頁
+      </Link>
+      <Link href="/short" className={linkClass}>
+        短篇故事
+      </Link>
+      <Link href="/serial" className={linkClass}>
+        互動結局
+      </Link>
+      <Link href="/categories" className={linkClass}>
+        題材
+      </Link>
+      {user && (
+        <Link href="/my-endings" className={linkClass}>
+          我的結局本
+        </Link>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -37,41 +51,7 @@ export default async function NavBar() {
             style={{ background: "linear-gradient(90deg, #7a3b32, #c99a3c, transparent)" }}
             aria-hidden="true"
           />
-          <nav className="flex flex-col gap-1">
-            <Link href="/#short-stories" className={linkClass}>
-              短篇故事
-            </Link>
-            <Link href="/#serial-stories" className={linkClass}>
-              每日連載
-            </Link>
-            {user && (
-              <Link href="/my-endings" className={linkClass}>
-                我的結局本
-              </Link>
-            )}
-          </nav>
-
-          {genres.length > 0 && (
-            <div className="mt-6 px-3">
-              <p className="text-xs font-bold text-ink/40 mb-2 tracking-wide">類別</p>
-              <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
-                {genres.map(([genre, count]) => {
-                  const color = getGenreColor(genre);
-                  return (
-                    <Link
-                      key={genre}
-                      href={`/?genre=${encodeURIComponent(genre)}#stories`}
-                      className="text-[11px] font-bold px-2 py-1 rounded-full transition-transform hover:-translate-y-0.5"
-                      style={{ color: color.text, background: color.bg }}
-                    >
-                      {genre}
-                      <span className="opacity-50 font-normal ml-1">{count}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <nav className="flex flex-col gap-1">{navItems}</nav>
 
           <div className="flex-1" />
 
@@ -103,11 +83,14 @@ export default async function NavBar() {
             顧事
           </Link>
           <nav className="flex items-center gap-3 text-sm overflow-x-auto">
-            <Link href="/#short-stories" className="text-ink/70 hover:text-ink whitespace-nowrap">
+            <Link href="/short" className="text-ink/70 hover:text-ink whitespace-nowrap">
               短篇
             </Link>
-            <Link href="/#serial-stories" className="text-ink/70 hover:text-ink whitespace-nowrap">
-              連載
+            <Link href="/serial" className="text-ink/70 hover:text-ink whitespace-nowrap">
+              互動結局
+            </Link>
+            <Link href="/categories" className="text-ink/70 hover:text-ink whitespace-nowrap">
+              題材
             </Link>
             {user && (
               <Link href="/my-endings" className="text-ink/70 hover:text-ink whitespace-nowrap">
