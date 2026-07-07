@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getChoices, generateEnding } from "@/app/actions/endings";
 import LikeButton from "@/components/LikeButton";
@@ -26,6 +26,17 @@ export default function EndingFlow({
   const [choice, setChoice] = useState<string | null>(initialChoice);
   const [ending, setEnding] = useState<string | null>(initialEnding);
   const [error, setError] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
+  const lastChoiceRef = useRef<string | null>(null);
+
+  // 等太耐（>20s）就俾個重試按鈕，唔好成個 spinner 轉到永遠
+  useEffect(() => {
+    const isLoading =
+      (stage === "choosing" && choices.length === 0) || stage === "writing";
+    if (!isLoading) return;
+    const t = setTimeout(() => setSlow(true), 20_000);
+    return () => clearTimeout(t);
+  }, [stage, choices.length]);
 
   if (!loggedIn) {
     return (
@@ -45,6 +56,7 @@ export default function EndingFlow({
 
   async function startChoices() {
     setError(null);
+    setSlow(false);
     setStage("choosing");
     const res = await getChoices(storyId);
     if (!res.ok) {
@@ -57,7 +69,9 @@ export default function EndingFlow({
 
   async function pick(c: string) {
     setError(null);
+    setSlow(false);
     setChoice(c);
+    lastChoiceRef.current = c;
     setStage("writing");
     const res = await generateEnding(storyId, c);
     if (!res.ok) {
@@ -89,7 +103,21 @@ export default function EndingFlow({
 
       {/* 構思分支中 */}
       {stage === "choosing" && choices.length === 0 && (
-        <p className="text-sm text-ink/60 animate-pulse">構思劇情分支中……</p>
+        <div>
+          <p className="text-sm text-ink/60 animate-pulse">構思劇情分支中……</p>
+          {slow && (
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-xs text-ink/50">等咗有點耐，AI 可能忙緊。</p>
+              <button
+                type="button"
+                onClick={startChoices}
+                className="text-xs font-bold text-brick underline underline-offset-2"
+              >
+                重試
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* 揀分支 */}
@@ -127,6 +155,20 @@ export default function EndingFlow({
           <p className="text-sm text-ink/60 animate-pulse">
             正在為你撰寫專屬結局……
           </p>
+          {slow && (
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-xs text-ink/50">等咗有點耐，AI 可能忙緊。</p>
+              <button
+                type="button"
+                onClick={() =>
+                  lastChoiceRef.current && pick(lastChoiceRef.current)
+                }
+                className="text-xs font-bold text-brick underline underline-offset-2"
+              >
+                重試
+              </button>
+            </div>
+          )}
         </div>
       )}
 

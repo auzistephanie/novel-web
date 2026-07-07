@@ -4,6 +4,8 @@ import LikeButton from "@/components/LikeButton";
 import EndingFlow from "@/components/EndingFlow";
 
 export const revalidate = 0;
+// 畀 EndingFlow 嘅 server actions（getChoices/generateEnding）足夠時間等 DeepSeek 回應
+export const maxDuration = 60;
 
 export default async function StoryPage({
   params,

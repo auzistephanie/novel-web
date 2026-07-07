@@ -11,26 +11,41 @@ type Msg = { role: "system" | "user" | "assistant"; content: string };
 
 export async function deepseekChat(
   messages: Msg[],
-  opts: { temperature?: number; maxTokens?: number } = {}
+  opts: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {}
 ): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("DEEPSEEK_API_KEY 未設定");
 
-  const res = await fetch(DEEPSEEK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages,
-      temperature: opts.temperature ?? 0.9,
-      max_tokens: opts.maxTokens ?? 1200,
-    }),
-    // 避免 Next fetch 快取
-    cache: "no-store",
-  });
+  const timeoutMs = opts.timeoutMs ?? 55_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(DEEPSEEK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages,
+        temperature: opts.temperature ?? 0.9,
+        max_tokens: opts.maxTokens ?? 1200,
+      }),
+      // 避免 Next fetch 快取
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error("DeepSeek 回應逾時，請再試一次");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
