@@ -3,28 +3,39 @@ import { redirect } from "next/navigation";
 import StoryCard from "@/components/StoryCard";
 import { loadContext, COLS, type Story } from "@/lib/stories";
 import { getGenreColor } from "@/lib/genreColor";
+import { getParentByKey } from "@/lib/genreCategories";
 
 export const revalidate = 0;
 
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ genre?: string }>;
+  searchParams: Promise<{ genre?: string; parent?: string }>;
 }) {
-  const genre = (await searchParams).genre ?? "";
-  if (!genre) redirect("/categories");
+  const { genre: legacyGenre, parent: parentKey } = await searchParams;
+
+  // 新：大類瀏覽（categories 頁連過嚟）
+  const parent = parentKey ? getParentByKey(parentKey) : undefined;
+  // 舊：單一細類直連（首頁「熱門題材」等仍用呢個，保留兼容）
+  const genre = legacyGenre ?? "";
+
+  if (!parent && !genre) redirect("/categories");
 
   const { supabase, user, likedIds } = await loadContext();
   const likedSet = new Set(likedIds);
-  const color = getGenreColor(genre);
 
-  const { data } = await supabase
+  const displayLabel = parent ? parent.label : genre;
+  const color = getGenreColor(displayLabel);
+
+  let query = supabase
     .from("novel_stories")
     .select(COLS)
-    .eq("genre", genre)
     .order("created_at", { ascending: false })
-    .limit(200)
-    .returns<Story[]>();
+    .limit(200);
+
+  query = parent ? query.in("genre", parent.genres) : query.eq("genre", genre);
+
+  const { data } = await query.returns<Story[]>();
 
   const stories = data ?? [];
 
@@ -38,7 +49,7 @@ export default async function BrowsePage({
           className="font-serif font-black text-3xl px-3 py-1 rounded-lg"
           style={{ color: color.text, background: color.bg }}
         >
-          {genre}
+          {displayLabel}
         </span>
         <span className="text-ink/50 text-sm">{stories.length} 篇故事</span>
       </header>
