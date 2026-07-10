@@ -12,6 +12,13 @@ type Story = {
   story_type: string | null;
 };
 
+// 顧事 House Style（Voice Profile v1 精華；正本在 novel-web/VOICE_PROFILE.md）
+const VOICE_RULE =
+  "顧事House Style：段落短（1至3句一段），關鍵句獨立成段；" +
+  "結局必須承接原文的敘事聲道與節奏（快節奏熱血短句／冷幽默第一人稱毒舌／溫情細節催淚，依原文而定）；" +
+  "用具體場景、對白、動作推進情節與情感，禁止「他很感動」「她哭了很久」式概括，禁止說教、無鋪墊開掛、翻譯腔；" +
+  "結尾要收在情緒最高點，末句要短、有力、可獨立引用。";
+
 async function loadSerialStory(storyId: string): Promise<Story | null> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -83,7 +90,10 @@ export async function generateEnding(
 
     const ending = await deepseekChat(
       [
-        { role: "system", content: `你是一位中文網絡小說作家。${LANG_RULE}` },
+        {
+          role: "system",
+          content: `你是「顧事」的駐站作者。${LANG_RULE}${VOICE_RULE}`,
+        },
         {
           role: "user",
           content:
@@ -92,7 +102,8 @@ export async function generateEnding(
             `讀者為這個故事選擇的劇情走向是：「${cleanChoice}」。\n\n` +
             `請據此為這位讀者量身撰寫一個專屬結局延續，約 400 至 700 字。` +
             `結局需承接上述劇情走向、貼合原故事的世界觀、人物性格與語氣，` +
-            `情節完整、收束漂亮，可比原故事更圓滿或更精彩。只輸出結局正文。`,
+            `情節完整、收束漂亮，可比原故事更圓滿或更精彩。` +
+            `結尾收在情緒最高點，最後一句要短、可獨立引用。只輸出結局正文。`,
         },
       ],
       { temperature: 0.9, maxTokens: 1400 }
