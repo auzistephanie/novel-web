@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getGenreColor } from "@/lib/genreColor";
-import StoryExcerptToggle from "@/components/StoryExcerptToggle";
 import RecommendedStories from "@/components/RecommendedStories";
+import EndingBookshelf from "@/components/EndingBookshelf";
 
 export const revalidate = 0;
 
@@ -15,13 +14,6 @@ type EndingRow = {
   story_id: string;
   novel_stories: { title: string; genre: string; content: string } | null;
 };
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
-    d.getDate()
-  ).padStart(2, "0")}`;
-}
 
 export default async function MyEndingsPage() {
   const supabase = await createClient();
@@ -86,65 +78,7 @@ export default async function MyEndingsPage() {
         </div>
       )}
 
-      {hasEndings && (
-        <div className="relative pl-6">
-          <div
-            className="absolute left-[3px] top-2 bottom-2 w-2.5 tile-pattern-vertical opacity-40"
-            aria-hidden="true"
-          />
-          <div className="space-y-8">
-            {endings.map((e) => {
-              const genre = e.novel_stories?.genre ?? "";
-              const color = getGenreColor(genre);
-              return (
-                <div key={e.id} className="relative">
-                  <span
-                    className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-cream"
-                    style={{ background: color.bar }}
-                    aria-hidden="true"
-                  />
-                  <div className="border border-ink/15 rounded-xl p-5 bg-cream shadow-[3px_3px_0_rgba(43,37,32,0.12)]">
-                    <div className="flex items-center justify-between mb-1 gap-3">
-                      <Link
-                        href={`/story/${e.story_id}`}
-                        className="font-serif font-bold hover:text-brick transition-colors"
-                      >
-                        {e.novel_stories?.title}
-                      </Link>
-                      <span
-                        className="shrink-0 text-xs font-bold px-2 py-1 rounded-full"
-                        style={{ color: color.text, background: color.bg }}
-                      >
-                        {genre}
-                      </span>
-                    </div>
-                    <p className="text-xs text-ink/40 mb-3">
-                      {formatDate(e.created_at)} 生成
-                    </p>
-                    {e.novel_stories?.content && (
-                      <StoryExcerptToggle content={e.novel_stories.content} />
-                    )}
-                    {e.choice_text && (
-                      <p className="text-xs text-ink/60 mb-2">
-                        你的選擇：
-                        <span className="font-bold text-ink/80">
-                          {e.choice_text}
-                        </span>
-                      </p>
-                    )}
-                    <p className="text-xs font-bold text-brick mb-2 tracking-wide">
-                      ● 專屬結局
-                    </p>
-                    <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7">
-                      {e.ending_content}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {hasEndings && <EndingBookshelf endings={endings} />}
     </main>
   );
 }
