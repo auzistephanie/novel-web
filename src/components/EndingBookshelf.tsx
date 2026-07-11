@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { getGenreColor } from "@/lib/genreColor";
 import StoryExcerptToggle from "@/components/StoryExcerptToggle";
+import { deleteEnding } from "@/app/actions/endings";
 
 type EndingRow = {
   id: string;
@@ -27,12 +28,46 @@ function shortDate(iso: string) {
 }
 
 export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
+  const [items, setItems] = useState(endings);
   const [openId, setOpenId] = useState<string | null>(endings[0]?.id ?? null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleDelete(id: string) {
+    if (confirmingId !== id) {
+      setConfirmingId(id);
+      setErrorId(null);
+      return;
+    }
+    startTransition(async () => {
+      const res = await deleteEnding(id);
+      if (!res.ok) {
+        setErrorId(id);
+        setConfirmingId(null);
+        return;
+      }
+      setItems((prev) => {
+        const next = prev.filter((e) => e.id !== id);
+        setOpenId((cur) => (cur === id ? next[0]?.id ?? null : cur));
+        return next;
+      });
+      setConfirmingId(null);
+    });
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="border-2 border-dashed border-ink/20 rounded-2xl p-8 text-center text-ink/50 text-sm">
+        結局本已經清空喇，去每日連載再揀個故事鍾意返啦。
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="spines-wrap" role="list">
-        {endings.map((e) => {
+        {items.map((e) => {
           const genre = e.novel_stories?.genre ?? "";
           const color = getGenreColor(genre);
           const title = e.novel_stories?.title ?? "";
@@ -54,10 +89,11 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
         })}
       </div>
 
-      {endings.map((e) => {
+      {items.map((e) => {
         if (openId !== e.id) return null;
         const genre = e.novel_stories?.genre ?? "";
         const color = getGenreColor(genre);
+        const isConfirming = confirmingId === e.id;
         return (
           <div
             key={e.id}
@@ -70,13 +106,31 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
               >
                 {e.novel_stories?.title}
               </Link>
-              <span
-                className="shrink-0 text-xs font-bold px-2 py-1 rounded-full"
-                style={{ color: color.text, background: color.bg }}
-              >
-                {genre}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className="text-xs font-bold px-2 py-1 rounded-full"
+                  style={{ color: color.text, background: color.bg }}
+                >
+                  {genre}
+                </span>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleDelete(e.id)}
+                  onBlur={() => setConfirmingId((cur) => (cur === e.id ? null : cur))}
+                  className={`text-xs font-bold px-2 py-1 rounded-full border transition-colors ${
+                    isConfirming
+                      ? "bg-brick text-cream border-brick"
+                      : "border-ink/20 text-ink/40 hover:border-brick hover:text-brick"
+                  } ${isPending ? "opacity-50" : ""}`}
+                >
+                  {isPending && isConfirming ? "刪緊…" : isConfirming ? "確定刪除？" : "刪除"}
+                </button>
+              </div>
             </div>
+            {errorId === e.id && (
+              <p className="text-xs text-brick mb-2">刪除失敗，請再試一次。</p>
+            )}
             <p className="text-xs text-ink/40 mb-3">{formatDate(e.created_at)} 生成</p>
             {e.novel_stories?.content && (
               <StoryExcerptToggle content={e.novel_stories.content} />

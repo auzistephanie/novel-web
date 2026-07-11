@@ -127,3 +127,28 @@ export async function generateEnding(
     return { ok: false, error: e instanceof Error ? e.message : "生成結局失敗" };
   }
 }
+
+// 刪除結局本入面一個結局
+export async function deleteEnding(
+  endingId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "請先登入" };
+
+    const { error } = await supabase
+      .from("novel_endings")
+      .delete()
+      .eq("id", endingId)
+      .eq("user_id", user.id);
+    if (error) return { ok: false, error: `刪除失敗：${error.message}` };
+
+    revalidatePath("/my-endings");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "刪除失敗" };
+  }
+}
