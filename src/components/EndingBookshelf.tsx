@@ -206,18 +206,26 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
               </div>
             )}
 
-            {e.choice_text && (
-              <p className="text-xs text-ink/60 mb-2">
-                你的選擇：
-                <span className="font-bold text-ink/80">{e.choice_text}</span>
-              </p>
+            {pickerStage === "closed" && (
+              <>
+                {e.choice_text && (
+                  <p className="text-xs text-ink/60 mb-2">
+                    你的選擇：
+                    <span className="font-bold text-ink/80">{e.choice_text}</span>
+                  </p>
+                )}
+                <p className="text-xs font-bold text-brick mb-2 tracking-wide">
+                  ● 你的專屬結局
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7 mb-4">
+                  {e.ending_content}
+                </p>
+              </>
             )}
-            <p className="text-xs font-bold text-brick mb-2 tracking-wide">● 你的專屬結局</p>
-            <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7 mb-4">
-              {e.ending_content}
-            </p>
 
-            {/* 就地揀過第二個分支，唔使跳去故事頁 */}
+            {/* 就地揀過第二個分支，唔使跳去故事頁 —
+                揀緊/生成緊嗰陣（pickerStage !== "closed"）暫時收埋舊結局，
+                淨低故事全文＋揀分支／生成中畫面，等讀者專心睇緊個新選擇。 */}
             {pickerStage === "closed" && (
               <button
                 type="button"
