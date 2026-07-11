@@ -57,11 +57,12 @@ export default function EndingFlow({
   async function startChoices() {
     setError(null);
     setSlow(false);
+    setChoices([]);
     setStage("choosing");
     const res = await getChoices(storyId);
     if (!res.ok) {
       setError(res.error);
-      setStage("idle");
+      setStage(ending ? "done" : "idle");
       return;
     }
     setChoices(res.choices);
@@ -181,6 +182,23 @@ export default function EndingFlow({
             </p>
           )}
           <p className="whitespace-pre-wrap leading-8 text-ink/85">{ending}</p>
+
+          <div className="mt-5 flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-ink/50">
+              呢個結局已經存入你嘅
+              <Link href="/my-endings" className="font-bold text-indigo hover:text-brick mx-1">
+                結局本
+              </Link>
+              。想睇下揀第二個分支會點？
+            </p>
+            <button
+              type="button"
+              onClick={startChoices}
+              className="text-xs font-bold text-indigo hover:text-brick underline underline-offset-2 shrink-0"
+            >
+              換個選擇再生成一個結局 →
+            </button>
+          </div>
 
           <div className="mt-6 pt-5 border-t border-ink/10 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm text-ink/60">

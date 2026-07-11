@@ -40,14 +40,17 @@ export default async function StoryPage({
       .maybeSingle();
     liked = !!like;
 
-    const { data: endingRow } = await supabase
+    // 同一個故事而家可以有多個結局（唔同分支），呢度攞返最新嗰個做預設顯示，
+    // 全部結局要睇返可以去「我的結局本」。
+    const { data: endingRows } = await supabase
       .from("novel_endings")
       .select("ending_content, choice_text")
       .eq("user_id", user.id)
       .eq("story_id", id)
-      .maybeSingle();
-    ending = endingRow?.ending_content ?? null;
-    choice = endingRow?.choice_text ?? null;
+      .order("created_at", { ascending: false })
+      .limit(1);
+    ending = endingRows?.[0]?.ending_content ?? null;
+    choice = endingRows?.[0]?.choice_text ?? null;
   }
 
   return (

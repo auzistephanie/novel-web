@@ -109,15 +109,14 @@ export async function generateEnding(
       { temperature: 0.9, maxTokens: 1400 }
     );
 
-    const { error } = await supabase.from("novel_endings").upsert(
-      {
-        user_id: user.id,
-        story_id: storyId,
-        choice_text: cleanChoice,
-        ending_content: ending,
-      },
-      { onConflict: "user_id,story_id" }
-    );
+    // 2026-07-11 起：同一個故事可以生成多個結局（唔同分支），
+    // 唔再 upsert 覆蓋，改做 insert 新一行，等讀者可以揀第二個分支再睇多個結局。
+    const { error } = await supabase.from("novel_endings").insert({
+      user_id: user.id,
+      story_id: storyId,
+      choice_text: cleanChoice,
+      ending_content: ending,
+    });
     if (error) return { ok: false, error: `儲存失敗：${error.message}` };
 
     revalidatePath("/my-endings");

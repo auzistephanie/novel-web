@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { getGenreColor } from "@/lib/genreColor";
-import StoryExcerptToggle from "@/components/StoryExcerptToggle";
 import { deleteEnding } from "@/app/actions/endings";
 
 type EndingRow = {
@@ -64,6 +63,12 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
     );
   }
 
+  // 同一個故事可能有多個結局（唔同分支），書脊加個小圓角標示第幾個分支，
+  // 等讀者一眼睇得出邊幾本其實係同一個故事嘅唔同結局。
+  const storyTotals: Record<string, number> = {};
+  for (const e of items) storyTotals[e.story_id] = (storyTotals[e.story_id] ?? 0) + 1;
+  const storySeen: Record<string, number> = {};
+
   return (
     <div>
       <div className="spines-wrap" role="list">
@@ -72,16 +77,21 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
           const color = getGenreColor(genre);
           const title = e.novel_stories?.title ?? "";
           const isOpen = openId === e.id;
+          storySeen[e.story_id] = (storySeen[e.story_id] ?? 0) + 1;
+          const branchIndex = storySeen[e.story_id];
+          const branchTotal = storyTotals[e.story_id];
           return (
             <button
               key={e.id}
               type="button"
               role="listitem"
               aria-expanded={isOpen}
+              title={e.choice_text ? `分支：${e.choice_text}` : undefined}
               className={`spine${isOpen ? " active" : ""}`}
               style={{ background: color.bar }}
               onClick={() => setOpenId(isOpen ? null : e.id)}
             >
+              {branchTotal > 1 && <span className="spine-branch">{branchIndex}</span>}
               <span>{title}</span>
               <span className="spine-date">{shortDate(e.created_at)}</span>
             </button>
@@ -132,9 +142,16 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
               <p className="text-xs text-brick mb-2">刪除失敗，請再試一次。</p>
             )}
             <p className="text-xs text-ink/40 mb-3">{formatDate(e.created_at)} 生成</p>
+
             {e.novel_stories?.content && (
-              <StoryExcerptToggle content={e.novel_stories.content} />
+              <div className="mb-4 pl-3 border-l-2 border-ink/10">
+                <p className="text-xs font-bold text-ink/40 mb-1 tracking-wide">故事全文</p>
+                <p className="whitespace-pre-wrap text-sm text-ink/70 leading-7">
+                  {e.novel_stories.content}
+                </p>
+              </div>
             )}
+
             {e.choice_text && (
               <p className="text-xs text-ink/60 mb-2">
                 你的選擇：
@@ -142,9 +159,16 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
               </p>
             )}
             <p className="text-xs font-bold text-brick mb-2 tracking-wide">● 專屬結局</p>
-            <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7">
+            <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7 mb-4">
               {e.ending_content}
             </p>
+
+            <Link
+              href={`/story/${e.story_id}`}
+              className="inline-flex items-center gap-1 text-xs font-bold text-indigo hover:text-brick transition-colors"
+            >
+              揀過第二個選擇，睇下另一個結局 →
+            </Link>
           </div>
         );
       })}
