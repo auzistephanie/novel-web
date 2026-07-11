@@ -74,7 +74,10 @@ export async function getChoices(
 export async function generateEnding(
   storyId: string,
   choice: string
-): Promise<{ ok: true; ending: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; ending: string; id: string; created_at: string }
+  | { ok: false; error: string }
+> {
   try {
     const supabase = await createClient();
     const {
@@ -111,17 +114,22 @@ export async function generateEnding(
 
     // 2026-07-11 起：同一個故事可以生成多個結局（唔同分支），
     // 唔再 upsert 覆蓋，改做 insert 新一行，等讀者可以揀第二個分支再睇多個結局。
-    const { error } = await supabase.from("novel_endings").insert({
-      user_id: user.id,
-      story_id: storyId,
-      choice_text: cleanChoice,
-      ending_content: ending,
-    });
-    if (error) return { ok: false, error: `儲存失敗：${error.message}` };
+    // 帶返 id/created_at，等前端（結局本嗰邊）唔使 refetch 都可以就地加返新結局落個列表。
+    const { data: inserted, error } = await supabase
+      .from("novel_endings")
+      .insert({
+        user_id: user.id,
+        story_id: storyId,
+        choice_text: cleanChoice,
+        ending_content: ending,
+      })
+      .select("id, created_at")
+      .single();
+    if (error || !inserted) return { ok: false, error: `儲存失敗：${error?.message}` };
 
     revalidatePath("/my-endings");
     revalidatePath(`/story/${storyId}`);
-    return { ok: true, ending };
+    return { ok: true, ending, id: inserted.id, created_at: inserted.created_at };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "生成結局失敗" };
   }

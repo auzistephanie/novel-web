@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { getGenreColor } from "@/lib/genreColor";
-import { deleteEnding } from "@/app/actions/endings";
+import { deleteEnding, getChoices, generateEnding } from "@/app/actions/endings";
 
 type EndingRow = {
   id: string;
@@ -13,6 +13,8 @@ type EndingRow = {
   story_id: string;
   novel_stories: { title: string; genre: string; content: string } | null;
 };
+
+type PickerStage = "closed" | "choosing" | "writing";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -33,6 +35,22 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
   const [errorId, setErrorId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // 就地「揀過第二個選擇」— 唔跳去故事頁，直接喺結局本入面攞新分支、生成新結局
+  const [pickerStage, setPickerStage] = useState<PickerStage>("closed");
+  const [pickerChoices, setPickerChoices] = useState<string[]>([]);
+  const [pickerError, setPickerError] = useState<string | null>(null);
+
+  function resetPicker() {
+    setPickerStage("closed");
+    setPickerChoices([]);
+    setPickerError(null);
+  }
+
+  function toggleOpen(id: string) {
+    setOpenId((cur) => (cur === id ? null : id));
+    resetPicker();
+  }
+
   function handleDelete(id: string) {
     if (confirmingId !== id) {
       setConfirmingId(id);
@@ -52,7 +70,43 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
         return next;
       });
       setConfirmingId(null);
+      resetPicker();
     });
+  }
+
+  async function startPicker(storyId: string) {
+    setPickerError(null);
+    setPickerChoices([]);
+    setPickerStage("choosing");
+    const res = await getChoices(storyId);
+    if (!res.ok) {
+      setPickerError(res.error);
+      setPickerStage("closed");
+      return;
+    }
+    setPickerChoices(res.choices);
+  }
+
+  async function pickChoice(e: EndingRow, choiceText: string) {
+    setPickerError(null);
+    setPickerStage("writing");
+    const res = await generateEnding(e.story_id, choiceText);
+    if (!res.ok) {
+      setPickerError(res.error);
+      setPickerStage("choosing");
+      return;
+    }
+    const newRow: EndingRow = {
+      id: res.id,
+      ending_content: res.ending,
+      choice_text: choiceText,
+      created_at: res.created_at,
+      story_id: e.story_id,
+      novel_stories: e.novel_stories,
+    };
+    setItems((prev) => [newRow, ...prev]);
+    setOpenId(newRow.id);
+    resetPicker();
   }
 
   if (items.length === 0) {
@@ -89,7 +143,7 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
               title={e.choice_text ? `分支：${e.choice_text}` : undefined}
               className={`spine${isOpen ? " active" : ""}`}
               style={{ background: color.bar }}
-              onClick={() => setOpenId(isOpen ? null : e.id)}
+              onClick={() => toggleOpen(e.id)}
             >
               {branchTotal > 1 && <span className="spine-branch">{branchIndex}</span>}
               <span>{title}</span>
@@ -158,17 +212,56 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
                 <span className="font-bold text-ink/80">{e.choice_text}</span>
               </p>
             )}
-            <p className="text-xs font-bold text-brick mb-2 tracking-wide">● 專屬結局</p>
+            <p className="text-xs font-bold text-brick mb-2 tracking-wide">● 你的專屬結局</p>
             <p className="whitespace-pre-wrap text-sm text-ink/80 leading-7 mb-4">
               {e.ending_content}
             </p>
 
-            <Link
-              href={`/story/${e.story_id}?pick=1`}
-              className="inline-flex items-center gap-1 text-xs font-bold text-indigo hover:text-brick transition-colors"
-            >
-              揀過第二個選擇，睇下另一個結局 →
-            </Link>
+            {/* 就地揀過第二個分支，唔使跳去故事頁 */}
+            {pickerStage === "closed" && (
+              <button
+                type="button"
+                onClick={() => startPicker(e.story_id)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-indigo hover:text-brick transition-colors"
+              >
+                揀過第二個選擇，睇下另一個結局 →
+              </button>
+            )}
+
+            {pickerStage === "choosing" && pickerChoices.length === 0 && (
+              <p className="text-xs text-ink/50 animate-pulse">構思新分支中……</p>
+            )}
+
+            {pickerStage === "choosing" && pickerChoices.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-ink/70 mb-2">
+                  你想故事怎樣走？選一個方向：
+                </p>
+                <div className="grid gap-2">
+                  {pickerChoices.map((c, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => pickChoice(e, c)}
+                      className="text-left border-2 border-ink/20 hover:border-brick hover:bg-brick/5 rounded-lg px-3 py-2 text-xs transition-colors"
+                    >
+                      <span className="font-bold text-brick mr-1">
+                        {["①", "②", "③", "④"][i] ?? "•"}
+                      </span>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {pickerStage === "writing" && (
+              <p className="text-xs text-ink/50 animate-pulse">正在為你撰寫新結局……</p>
+            )}
+
+            {pickerError && (
+              <p className="text-xs text-brick mt-2">⚠️ {pickerError}</p>
+            )}
           </div>
         );
       })}
