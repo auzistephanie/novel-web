@@ -13,9 +13,11 @@
 
 ## 頁面
 
-`/login`（Supabase Auth）· `/`（首頁，拆「短篇故事」＋「每日連載」兩個 section，各自獨立 genre 篩選）· `/story/[id]`（全文＋結局）· `/my-endings`（我的結局本，登入後先見，每個結局卡內建「展開故事全文」）
+`/login`（Supabase Auth）· `/`（首頁，拆「短篇故事」＋「每日連載」兩個 section，各自獨立 genre 篩選）· `/story/[id]`（全文＋結局）· `/my-endings`（我的結局本，登入後先見）
 
 Side menu：桌面版左側直向（logo＋短篇故事／每日連載／我的結局本／登出），手機版收做頂部橫向 bar。組件係 `src/components/NavBar.tsx`（檔名未改但內容已經係 sidebar+mobile bar）。
+
+⚠️ **`/my-endings` 樣式（2026-07-11 改版：書脊格仔）：** 原本長 timeline 一路 scroll 太難搵返舊結局，改用 `src/components/EndingBookshelf.tsx`（client component）——結局橫排做直條書脊（`.spine`／`.spines-wrap`，樣式喺 `globals.css`），撳一下先展開嗰篇詳情（故事節錄／你嘅選擇／專屬結局），一次淨開一本。日後有新結局相關 UI 改動，去呢個元件改，唔好喺 `page.tsx` 度加返 inline timeline。
 
 ## 內容型態（story_type，2026-07-05 加）
 
