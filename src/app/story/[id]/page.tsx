@@ -9,10 +9,13 @@ export const maxDuration = 60;
 
 export default async function StoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ pick?: string }>;
 }) {
   const { id } = await params;
+  const { pick } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -93,6 +96,7 @@ export default async function StoryPage({
             liked={liked}
             initialEnding={ending}
             initialChoice={choice}
+            autoPick={pick === "1"}
           />
         </div>
       )}

@@ -13,21 +13,28 @@ export default function EndingFlow({
   liked,
   initialEnding,
   initialChoice,
+  autoPick = false,
 }: {
   storyId: string;
   loggedIn: boolean;
   liked: boolean;
   initialEnding: string | null;
   initialChoice: string | null;
+  /** 由「我的結局本」嘅「揀過第二個選擇」連結帶 ?pick=1 過嚟時，一開頁即刻跳去揀分支，
+   *  唔好再顯示返上次已經有嘅結局。 */
+  autoPick?: boolean;
 }) {
   const hasInitial = !!initialEnding;
-  const [stage, setStage] = useState<Stage>(hasInitial ? "done" : "idle");
+  const [stage, setStage] = useState<Stage>(
+    autoPick ? "choosing" : hasInitial ? "done" : "idle"
+  );
   const [choices, setChoices] = useState<string[]>([]);
   const [choice, setChoice] = useState<string | null>(initialChoice);
   const [ending, setEnding] = useState<string | null>(initialEnding);
   const [error, setError] = useState<string | null>(null);
   const [slow, setSlow] = useState(false);
   const lastChoiceRef = useRef<string | null>(null);
+  const autoPickedRef = useRef(false);
 
   // 等太耐（>20s）就俾個重試按鈕，唔好成個 spinner 轉到永遠
   useEffect(() => {
@@ -37,6 +44,14 @@ export default function EndingFlow({
     const t = setTimeout(() => setSlow(true), 20_000);
     return () => clearTimeout(t);
   }, [stage, choices.length]);
+
+  // autoPick：一入頁即刻攞新分支，唔使等用家再撳一次
+  useEffect(() => {
+    if (!autoPick || !loggedIn || autoPickedRef.current) return;
+    autoPickedRef.current = true;
+    startChoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPick, loggedIn]);
 
   if (!loggedIn) {
     return (

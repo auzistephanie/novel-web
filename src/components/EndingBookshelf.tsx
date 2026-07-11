@@ -164,7 +164,7 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
             </p>
 
             <Link
-              href={`/story/${e.story_id}`}
+              href={`/story/${e.story_id}?pick=1`}
               className="inline-flex items-center gap-1 text-xs font-bold text-indigo hover:text-brick transition-colors"
             >
               揀過第二個選擇，睇下另一個結局 →
