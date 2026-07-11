@@ -38,8 +38,6 @@ export default async function MyEndingsPage() {
         由您親自選擇劇情走向，AI 為您撰寫的專屬結局都在這裡。
       </p>
 
-      <RecommendedStories limit={4} />
-
       {!hasEndings && (
         <div className="relative border-2 border-dashed border-ink/25 rounded-2xl p-10 text-center overflow-hidden">
           <svg
@@ -79,6 +77,10 @@ export default async function MyEndingsPage() {
       )}
 
       {hasEndings && <EndingBookshelf endings={endings} />}
+
+      <div className="mt-12">
+        <RecommendedStories limit={4} />
+      </div>
     </main>
   );
 }
