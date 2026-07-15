@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { deleteStory } from "@/app/actions/admin";
 
@@ -48,7 +49,15 @@ export default function AdminStoryList({ stories }: { stories: AdminStoryRow[] }
           <tbody>
             {list.map((s) => (
               <tr key={s.id} className="border-b border-ink/10 last:border-0">
-                <td className="px-4 py-3">{s.title}</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/story/${s.id}`}
+                    target="_blank"
+                    className="underline decoration-dotted underline-offset-2 hover:text-brick"
+                  >
+                    {s.title}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">{s.genre}</td>
                 <td className="px-4 py-3">
                   <span className="text-xs px-2 py-0.5 rounded-full border border-brick text-brick">
