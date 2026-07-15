@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
+import { isAdmin } from "@/lib/admin";
 
 export default async function NavBar() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const admin = isAdmin(user?.email);
 
   const linkClass =
     "text-sm text-ink/70 hover:text-ink hover:bg-ink/5 rounded-md px-3 py-2 transition-colors";
@@ -28,6 +30,11 @@ export default async function NavBar() {
       {user && (
         <Link href="/my-endings" className={linkClass}>
           我的結局本
+        </Link>
+      )}
+      {admin && (
+        <Link href="/admin" className={linkClass}>
+          Admin
         </Link>
       )}
     </>
@@ -95,6 +102,11 @@ export default async function NavBar() {
             {user && (
               <Link href="/my-endings" className="text-ink/70 hover:text-ink whitespace-nowrap">
                 結局本
+              </Link>
+            )}
+            {admin && (
+              <Link href="/admin" className="text-ink/70 hover:text-ink whitespace-nowrap">
+                Admin
               </Link>
             )}
             {user ? (
