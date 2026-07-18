@@ -4,10 +4,9 @@ Repo 核心 = 網站產品 **novel-web**（Next.js + Supabase）：故事牆 + �
 
 > 內容系統詳解拆咗落 `docs/SYSTEMS.md`，按需 read_file。
 
-## ✍️ 寫入分流（MANDATORY — 想更新本檔前先讀）
+## ⚙️ Standards（MANDATORY — 正本：`stephanie-personal/docs/ai-governance/06-STANDARDS.md`，改規則只改正本）
 
-- **改動記錄／開發史** → root `CHANGELOG.md` **頂部**，唔准 append 落本檔；本檔硬上限 **100 行／6KB**
-- 本檔只准改：路由行、現行規則本身變咗。完整分流表 → `stephanie-personal/docs/ai-governance/04-MAINTENANCE.md` §0
+Push（`github_push.py` 永不 git CLI・HTTPS・一次 run 一 commit）・寫入分流（改動記錄 → `CHANGELOG.md` **頂部**，唔准 append 落本檔；本檔上限 100 行/6KB）・清理 mv `_to_delete/`・改舊檔先 `.bak-YYYYMMDD`・方向性決定先 preview・改完以用家身份 run 一次先報完成・governance 00–05（派 subagent 先讀 01+03；報完成前過 02 §R2；冇 mount stephanie-personal → 叫 Stephanie 連埋）。詳文＋例外表 → 正本。
 
 
 ## 產品出口 = novel-web
@@ -20,9 +19,13 @@ Repo 核心 = 網站產品 **novel-web**（Next.js + Supabase）：故事牆 + �
 
 ## 推送本 repo
 
-> 裝機步驟正本 → `stephanie-personal/docs/PUSH-SETUP.md`。
+> 正本 → ⚙️ Standards §S1。本 repo：root `github_push.py`。novel-web 有自己嘅 `github_push.py`（PAT 喺 `novel-web/.env`；`push-novel-web.sh`／plain git CLI 已停用）；⚠️ 雲端 sandbox 對 novel-web 跑 API push 會撞 403（session 未 allowlist）→ `device_commit_files` 交返本機跑，詳見 `novel-web/CLAUDE.md`「開發須知」。
 
-`python3 github_push.py "<commit message>"`（GitHub API push，PAT in `.env`；已尊重 `.gitignore`，`_to_delete/` 唔會上）。novel-web 而家都有自己嘅 `github_push.py`（同款 GitHub API 寫法，PAT 喺 `novel-web/.env`，2026-07-15 確認為正式推送方式，`push-novel-web.sh`／舊有「plain git CLI」寫法已停用）；⚠️ 雲端 sandbox 對 novel-web repo 跑 API push 會撞 403（session 未 allowlist），遇到就用 `device_commit_files` 交返本機跑，詳見 `novel-web/CLAUDE.md`「開發須知」。
+## ✅ 完成前檢查（本 repo 專屬 DoD；通用四格 → 02-JUDGMENT §R2）
+
+1. 改 novel-web 相關 → 跟 `novel-web/CLAUDE.md` 嘅驗法實際行一次（嗰邊有自己規則）
+2. 改本 repo script（root／`scripts/`／`shortdrama/`）→ 實跑一次貼 output
+3. Push：root `python3 github_push.py "<msg>"`（novel-web 改動用佢自己嗰份）＋核實 GitHub HEAD（→ Standards §S1）
 
 ## 📖 文件讀取規則
 
@@ -34,8 +37,4 @@ Repo 核心 = 網站產品 **novel-web**（Next.js + Supabase）：故事牆 + �
 | 改版歷史 | `CHANGELOG.md` |
 | AI 調度/驗證/判斷制度（全 repo 共用） | `stephanie-personal/docs/ai-governance/` |
 
-## AI 制度（全 repo 共用正本）
-
-正本：`stephanie-personal/docs/ai-governance/`（00 診斷 · 01 調度守則 · 02 判斷 rubric · 03 派工模板 · 04 維護協議 · 05 給未來 session 的信）。
-決定咗要派 subagent（門檻見 01 §1，唔係乜都派）先讀 01+03；報「完成」前過一次 02 §R2。
-⚠️ Session 冇 mount stephanie-personal folder（REQUIRED core folder，唔係 optional）→ 叫 Stephanie 連埋佢，唔好靜靜地跳過成套制度。
+（AI 制度＋push＋分流規則 → 見頂部 ⚙️ Standards block）
