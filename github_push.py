@@ -12,6 +12,11 @@ github_push.py — 直接經 GitHub API 把整個 working tree 同步上 GitHub 
   計每個工作檔的 git blob sha，只上傳有差異的檔，並刪除遠端多出的檔。
   所以就算本地 git 歷史舊咗/未同步，一樣會正確同步，且可重複執行（idempotent）。
 
+⚠️ 一次 run = 一個 commit = 一次 Vercel deployment（2026-07-02 教訓：舊版逐個檔案 PUT
+會整十幾個 commit，一次 push 撞爆 Vercel 免費 plan「100 deployments/日」上限）。呢個 script
+無論改幾多檔案，都係一個 tree + 一個 commit + 一次郁 ref，天生只觸發一次 build。
+唔好喺短時間內連環 run，慳返 deployment 額度。
+
 用法：
   python3 github_push.py "你的 commit message"
 
@@ -35,6 +40,34 @@ except ImportError:
 
 API = "https://api.github.com"
 REPO = os.path.dirname(os.path.abspath(__file__))
+
+# --- 2026-07-15 concurrent-push 事後可見警報（overlap 診斷 fix A，見
+#     stephanie-personal CHANGELOG 2026-07-15）。Fail-silent，唔影響push行為，
+#     remote永遠贏，本地照常上——純粹畀你事後喺log見到「可能撞咗」。 ---
+_PUSH_STATE_DIR = os.path.join(os.path.dirname(REPO), "stephanie-personal", "scripts", ".push-state")
+_PUSH_STATE_FILE = os.path.join(_PUSH_STATE_DIR, os.path.basename(REPO) + ".json")
+
+
+def _check_concurrent_push(base_sha):
+    try:
+        if not os.path.isfile(_PUSH_STATE_FILE):
+            return
+        last = json.load(open(_PUSH_STATE_FILE))
+        last_sha = last.get("last_seen_sha")
+        if last_sha and last_sha != base_sha:
+            print(f"⚠️ CONCURRENT-PUSH-DETECTED：remote SHA喺上個cycle之後變咗（{last_sha[:7]}→{base_sha[:7]}），可能有第二部機/session推過嘢")
+    except Exception:
+        pass
+
+
+def _record_seen_sha(sha):
+    try:
+        os.makedirs(_PUSH_STATE_DIR, exist_ok=True)
+        with open(_PUSH_STATE_FILE, "w") as f:
+            json.dump({"last_seen_sha": sha}, f)
+    except Exception:
+        pass
+
 
 if load_dotenv:
     load_dotenv(os.path.join(REPO, ".env"))
@@ -120,24 +153,6 @@ def remote_tree_map(base, tree_sha, token):
     return {e["path"]: e["sha"] for e in data.get("tree", []) if e["type"] == "blob"}
 
 
-def sync_local_head(commit_sha, owner, repo, token):
-    """Push 成功後，fast-forward 本地 main 到啱 push 嘅 commit，
-    令 git status 唔再顯示假改動（本 script 經 GitHub API 寫入、唔會 advance 本地 HEAD）。
-    token 只用喺 fetch URL、唔寫入任何檔、唔 print；任何一步失敗都唔阻塞
-    （已 push 上 GitHub 嘅內容唔受影響）。用 --mixed：只郁 HEAD+index，唔掂 working tree。"""
-    auth_url = f"https://{token}@github.com/{owner}/{repo}.git"
-    if run(["git", "fetch", auth_url, "main"]).returncode != 0:
-        print("   (本地 HEAD 未同步：fetch 失敗，唔影響已 push 內容)")
-        return
-    # 順手更新 refs/remotes/origin/main，等 `git status` 嘅 ahead/behind 都準——
-    # 唔係淨係 HEAD 啱咗但 tracking ref 舊咗，繼續呃人話「ahead N」。
-    run(["git", "update-ref", "refs/remotes/origin/main", commit_sha])
-    if run(["git", "reset", "--mixed", commit_sha]).returncode == 0:
-        print("   本地 HEAD 已對齊 remote — git status 現時乾淨 ✨")
-    else:
-        print("   (本地 HEAD reset 失敗，唔影響已 push 內容)")
-
-
 def main():
     if len(sys.argv) < 2 or not sys.argv[1].strip():
         raise SystemExit('用法：python3 github_push.py "commit message"')
@@ -153,6 +168,7 @@ def main():
     base = f"/repos/{owner}/{repo}/git"
     ref = api("GET", f"{base}/ref/heads/main", token)
     base_sha = ref["object"]["sha"]
+    _check_concurrent_push(base_sha)
     base_tree = api("GET", f"{base}/commits/{base_sha}", token)["tree"]["sha"]
     remote = remote_tree_map(base, base_tree, token)
 
@@ -178,7 +194,7 @@ def main():
 
     if not tree:
         print("Nothing to push — 遠端已同步。")
-        sync_local_head(base_sha, owner, repo, token)
+        _record_seen_sha(base_sha)
         return
 
     new_tree = api("POST", f"{base}/trees", token, {"base_tree": base_tree, "tree": tree})
@@ -187,9 +203,9 @@ def main():
     })
     api("PATCH", f"{base}/refs/heads/main", token, {"sha": commit["sha"]})
 
+    _record_seen_sha(commit["sha"])
     print(f"✅ Pushed to GitHub — {message}")
     print(f"   {uploaded} 更新 / {len(deletions)} 刪除 · commit {commit['sha'][:7]}")
-    sync_local_head(commit["sha"], owner, repo, token)
 
 
 if __name__ == "__main__":

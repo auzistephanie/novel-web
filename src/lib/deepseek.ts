@@ -29,7 +29,8 @@ export async function deepseekChat(
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
+        thinking: { type: "disabled" },
         messages,
         temperature: opts.temperature ?? 0.9,
         max_tokens: opts.maxTokens ?? 1200,
