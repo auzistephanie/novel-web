@@ -2,9 +2,9 @@
 """
 github_push.py — 直接經 GitHub API 把整個 working tree 同步上 GitHub main。
 
-點解唔用 git CLI：
+點解唔用 git CLI 做 push：
   Sandbox 跑 `git add/commit/push` 會留低 stale `.git/index.lock` /
-  `HEAD.lock`，之後所有 commit 都被擋。呢個 script 完全繞過 git CLI，
+  `HEAD.lock`，之後所有 commit 都被擋。呢個 script 完全繞過 git CLI 做 push，
   用 GitHub Git Data API（blobs / trees / commits / refs）直接寫上 GitHub。
 
 偵測方式（重要）：
@@ -12,16 +12,23 @@ github_push.py — 直接經 GitHub API 把整個 working tree 同步上 GitHub 
   計每個工作檔的 git blob sha，只上傳有差異的檔，並刪除遠端多出的檔。
   所以就算本地 git 歷史舊咗/未同步，一樣會正確同步，且可重複執行（idempotent）。
 
-⚠️ 一次 run = 一個 commit = 一次 Vercel deployment（2026-07-02 教訓：舊版逐個檔案 PUT
-會整十幾個 commit，一次 push 撞爆 Vercel 免費 plan「100 deployments/日」上限）。呢個 script
-無論改幾多檔案，都係一個 tree + 一個 commit + 一次郁 ref，天生只觸發一次 build。
-唔好喺短時間內連環 run，慳返 deployment 額度。
+⚠️ 本地 `git status`／`git log` 唔會再反映 push 狀態（2026-07-15 起，故意）：
+  之前試過 push 完順手 `git fetch`＋`git reset --mixed` 令本地 HEAD 對齊 remote，
+  淨係為咗令 `git status` 睇落乾淨。但 .git 住喺 Google Drive streaming 資料夾，
+  呢兩個 git 指令成日撞到 stale ref lock（`refs/heads/main.lock` 等），一卡就係
+  幾廿個鐘，令人誤以為「push 唔到」（其實 GitHub 早已同步咗，淨係本地顯示舊）。
+  已拍板：寧願本地 status 唔準，都要 push 呢條路徑本身零依賴 git 寫入操作。
+  想知道真正有冇 push 咗 → 睇 autopush.log 尾行（"✅ Pushed" / "Nothing to push"）
+  或者直接開 GitHub 網頁睇 commit 時間，唔好信呢批 repo 嘅本地 git status。
 
 用法：
-  python3 github_push.py "你的 commit message"
+  python3 scripts/github_push.py "你的 commit message"
 
 Token 來源：.env（GITHUB_TOKEN）→ 環境變數 GITHUB_TOKEN/GH_TOKEN → .gh-token 檔（gitignored）。
 Token 只喺本機讀，唔會 print。
+
+備註（中文檔名）：working_files() 靠 `git ls-files`，如遇非 ASCII 檔名會被 git octal-escape，
+所以呢個 script 全程用 `-c core.quotepath=false` 行 git 指令，避免 path 變成字面 "\346\..." 亂碼。
 """
 import base64
 import hashlib
@@ -39,7 +46,7 @@ except ImportError:
     load_dotenv = None
 
 API = "https://api.github.com"
-REPO = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # --- 2026-07-15 concurrent-push 事後可見警報（overlap 診斷 fix A，見
 #     stephanie-personal CHANGELOG 2026-07-15）。Fail-silent，唔影響push行為，
@@ -74,8 +81,10 @@ if load_dotenv:
 
 
 def run(args):
-    # -c core.quotepath=false：非 ASCII（中文）檔名唔好被 octal-escape 做 "\346\...",
-    # 否則 git ls-files 攞到嘅係字面 backslash-digit 文字，match 唔到真檔案，會被當刪咗。
+    # -c core.quotepath=false：非 ASCII（中文）檔名唔好被 octal-escape 做 "\344\275..."，
+    # 否則落面 path 攞到嘅係字面 backslash-digit 文字，open() 揾唔到個真檔案。
+    # 呢個 script 淨係用 git 做 read-only 操作（config get / ls-files）——唔會再
+    # 寫任何 .git ref/HEAD/index，所以唔會再產生 stale lock。
     return subprocess.run(["git", "-c", "core.quotepath=false"] + args[1:],
                            cwd=REPO, capture_output=True, text=True)
 
@@ -123,10 +132,15 @@ def api(method, path, token, body=None):
     req.add_header("Accept", "application/vnd.github+json")
     req.add_header("User-Agent", "github-push-script")
     try:
-        with urllib.request.urlopen(req) as resp:
+        # timeout=20（2026-07-16 加）：冇呢個 urlopen 會無限等，網絡一卡就永久
+        # 卡死呢個 process（連帶拖死 auto_push.sh 個 daemon loop）。20s 後放棄
+        # 呢個 request，畀外層 auto_push.sh 嘅 `timeout 60` 做埋雙保險。
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         raise SystemExit(f"❌ GitHub API {method} {path} -> {e.code}\n{e.read().decode()}")
+    except (urllib.error.URLError, TimeoutError) as e:
+        raise SystemExit(f"❌ GitHub API {method} {path} -> 網絡/timeout: {e}")
 
 
 def git_blob_sha(data: bytes) -> str:
@@ -155,7 +169,7 @@ def remote_tree_map(base, tree_sha, token):
 
 def main():
     if len(sys.argv) < 2 or not sys.argv[1].strip():
-        raise SystemExit('用法：python3 github_push.py "commit message"')
+        raise SystemExit('用法：python3 scripts/github_push.py "commit message"')
     message = sys.argv[1]
 
     remote_token, owner, repo = parse_remote(get_remote_url())
