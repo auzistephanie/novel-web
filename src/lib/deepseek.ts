@@ -11,7 +11,12 @@ type Msg = { role: "system" | "user" | "assistant"; content: string };
 
 export async function deepseekChat(
   messages: Msg[],
-  opts: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {}
+  opts: {
+    temperature?: number;
+    maxTokens?: number;
+    timeoutMs?: number;
+    model?: string; // 2026-08-01：故事生成（novel-story-generator）改用 deepseek-chat 求文筆質感，結局即時生成維持 deepseek-v4-flash 求速度
+  } = {}
 ): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("DEEPSEEK_API_KEY 未設定");
@@ -29,7 +34,7 @@ export async function deepseekChat(
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "deepseek-v4-flash",
+        model: opts.model ?? "deepseek-v4-flash",
         thinking: { type: "disabled" },
         messages,
         temperature: opts.temperature ?? 0.9,

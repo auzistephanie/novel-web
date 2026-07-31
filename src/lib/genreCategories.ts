@@ -21,7 +21,7 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
   {
     key: "sweet-ceo",
     label: "總裁甜寵",
-    genres: ["總裁甜寵", "甜寵逆襲", "暗戀"],
+    genres: ["總裁甜寵", "甜寵逆襲", "暗戀", "甜寵反轉", "求而不得"],
     color: { bar: "#c1503a", text: "#c1503a", bg: "rgba(193,80,58,0.1)" }, // 磚紅橙
   },
   {
@@ -34,6 +34,7 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "重生虐戀復仇",
       "追妻火葬場",
       "雙重生",
+      "家族發瘋",
     ],
     color: { bar: "#7a3b32", text: "#7a3b32", bg: "rgba(122,59,50,0.1)" }, // 酒紅棕
   },
@@ -47,6 +48,10 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "團寵真千金",
       "豪門真假身份",
       "懸疑言情",
+      "穿書自救",
+      "身份反轉",
+      "假戲真做",
+      "雙胞胎替身局",
     ],
     color: { bar: "#3a5f8a", text: "#3a5f8a", bg: "rgba(58,95,138,0.1)" }, // 靛藍
   },
@@ -61,6 +66,8 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "重生", // 舊 tag，等同「重生逆襲」
       "打臉爽文",
       "贅婿稱王",
+      "潛入打臉",
+      "退婚逆襲",
     ],
     color: { bar: "#c99a3c", text: "#a97e26", bg: "rgba(201,154,60,0.15)" }, // 金黃
   },
