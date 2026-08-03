@@ -16,7 +16,7 @@
   - `novel_stories` — 故事本體，公開讀；DELETE 淨限 admin email（見下面 `/admin`）
   - `novel_likes` — user 鍾意記錄，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
   - `novel_endings` — AI 生成嘅個人化結局，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
-- 冇自建 API/service key——生成／寫入用 Cowork scheduled task 嘅 Supabase MCP；結局用 app 自己嘅 DeepSeek key（見下）；刪除故事靠 RLS policy，唔使 service-role key
+- 故事生成／寫入用 `SUPABASE_SERVICE_ROLE_KEY`（Vercel env，見下「Scheduled generation」）；結局用 app 自己嘅 DeepSeek key（見下）；刪除故事靠 RLS policy，唔使 service-role key
 
 ## 頁面
 
@@ -26,7 +26,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 
 ## 內容型態（story_type）
 
-`novel_stories.story_type`：`'serial'`（連載爽文，1200-1800字，cliffhanger 收尾）／`'short'`（完整短篇，1500-2200字，有頭有尾）。首頁按呢個欄位分兩個 section。短篇情感深度四項硬性要求詳細字眼見 `novel-story-generator` scheduled task 嘅 SKILL.md。
+`novel_stories.story_type`：`'serial'`（連載，2200-8000字，停喺抉擇/未揭曉節點）／`'short'`（完整短篇，1500-3000字，有頭有尾）。首頁按呢個欄位分兩個 section。House Style／字數／收尾規定嘅詳細字眼見 `src/app/api/cron/generate-stories/route.ts` 嘅 `STYLE_2026`／`SERIAL_STRUCTURE`／`SHORT_STRUCTURE` 常數。
 
 ⚠️ `short` 故事已經有齊結局，**唔應該**再生成「專屬結局」——`story` 詳情頁對 `short` 故事顯示唔同文案（冇結局生成 flow）。
 
@@ -34,11 +34,11 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 
 讀者揀完連載故事 → `EndingFlow.tsx` 叫 `src/app/actions/endings.ts::getChoices`（DeepSeek 即場生成 3 個劇情分支）→ 揀一個 → `generateEnding`（DeepSeek 生成 400–700 字專屬結局，insert 入 `novel_endings`）。全程用 `src/lib/deepseek.ts` 嘅 key，冇經 Cowork Supabase MCP 寫入。同一故事可以生成多個結局（唔同分支），insert 唔 upsert。
 
-## Scheduled tasks（喺 Cowork 度管理，唔喺呢個 repo）
+## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
-- `novel-story-generator` — 每日 12:30 同 17:30 各跑一次，每次生成新一批 3 篇，固定比例 2 連載＋1 短篇，30 類別加權池（男頻 weight 1 / 女頻 weight 2，同 `daily-novel/docs/SYSTEMS.md` Phase 2 類別同步）
-
-完整 prompt 存喺 scheduled task 真身（`stephanie-personal/scheduled-tasks/novel-story-generator/SKILL.md`），修改用 `update_scheduled_task`，唔好淨係改呢份 repo 嘅文件以為會生效。
+- `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
+- 邏輯全部喺 `route.ts`：4-slot 隨機組合（處境×身份×觸發事件×反轉 + genre tag）取代舊 30 類男女頻加權池，冇「男頻/女頻」之分；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 同 route 尾段 upsert
+- ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態
 
