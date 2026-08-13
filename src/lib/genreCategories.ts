@@ -52,6 +52,7 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "身份反轉",
       "假戲真做",
       "雙胞胎替身局",
+      "契約婚姻", // 2026-08-13 新骨架 contract_marriage 用，同「假戲真做」核心情緒賣點相近
     ],
     color: { bar: "#3a5f8a", text: "#3a5f8a", bg: "rgba(58,95,138,0.1)" }, // 靛藍
   },
@@ -91,6 +92,7 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "都市隱世強者",
       "都市情緒流",
       "都市", // 舊 tag，等同「都市日常」
+      "強強交鋒", // 2026-08-13 新骨架 power_clash 用（現代設定）。⚠️「雙強對峙」呢個名已經俾咗古言宮廷大類攞咗，冇撞名
     ],
     color: { bar: "#2f4a3e", text: "#2f4a3e", bg: "rgba(47,74,62,0.1)" }, // 墨綠
   },

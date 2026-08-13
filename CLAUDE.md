@@ -37,7 +37,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`：4-slot 隨機組合（處境×身份×觸發事件×反轉 + genre tag）取代舊 30 類男女頻加權池，冇「男頻/女頻」之分；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 同 route 尾段 upsert
+- 邏輯全部喺 `route.ts`：先揀「骨架」（identity_reveal/contract_marriage/power_clash，5:3:2 權重），各自用獨立 slot 池組情節，`gen_meta` 記低今次揀咗乜落 DB，俾下次生成排除近期用過嘅組合（2026-08-13 加，解決似曾相識；同日加埋「共鳴/落淚」「揭露機制」兩條硬規，詳見 daily-novel `CHANGELOG.md` 同日條目）；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 同 route 尾段 upsert
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態
