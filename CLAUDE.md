@@ -2,12 +2,13 @@
 
 由 `daily-novel`（Telegram bot 版）獨立分拆出嚟嘅網站產品。唔再推 Telegram，改做正式登入網站：故事牆、㩒鍾意、AI 定時生成個人化結局。改名／視覺／內容分流嘅決策史 → daily-novel `CHANGELOG.md`（2026-07-05 起數條）。
 
+## ⚙️ Standards（MANDATORY — 正本：`stephanie-personal/docs/ai-governance/06-STANDARDS.md`，改規則只改正本）
+
+Push（`github_push.py`，永不 git CLI・HTTPS・一 run 一 commit・**開工前 `--check`**・**收工即推**・三道閘 刪檔／SHA／交叉 review，撞閘唔好即刻 `--force`）・寫入分流（改動記錄 → `CHANGELOG.md` **頂部**；本檔上限 100 行/6KB）・清理 mv `_to_delete/`・方向性決定先 preview（02 §R3）・改完以用家身份 run 一次先報完成・governance 00–06（派工 01 §1＋03 模板；完成前過 02 §R2；冇 mount stephanie-personal 就叫 Stephanie 連埋）。**Codex 讀同層 `AGENTS.md`**。詳文＋例外表 → 正本。
+
 > 內容系統詳解拆咗落 `docs/SYSTEMS.md`，按需 read_file。
 
-## ✍️ 寫入分流（MANDATORY — 想更新本檔前先讀）
-
-- **改動記錄／開發史** → daily-novel root `CHANGELOG.md` **頂部**，唔准 append 落本檔；本檔硬上限 **100 行／6KB**
-- 本檔只准改：路由行、現行規則本身變咗。完整分流表 → `stephanie-personal/docs/ai-governance/04-MAINTENANCE.md` §0
+> ⚠️ 巢狀 repo：改動記錄寫 **parent** `daily-novel/CHANGELOG.md` 頂部，唔係本目錄。其餘分流跟上面 ⚙️ Standards。
 
 ## 架構
 
@@ -37,7 +38,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`：先揀「骨架」（identity_reveal/contract_marriage/power_clash，5:3:2 權重），各自用獨立 slot 池組情節，`gen_meta` 記低今次揀咗乜落 DB，俾下次生成排除近期用過嘅組合（2026-08-13 加，解決似曾相識；同日加埋「共鳴/落淚」「揭露機制」兩條硬規，詳見 daily-novel `CHANGELOG.md` 同日條目）；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 同 route 尾段 upsert
+- 邏輯全部喺 `route.ts`：揀「骨架」（identity_reveal/contract_marriage/power_clash，5:3:2 權重）→ 獨立 slot 池組情節 → `gen_meta` 記低落 DB 俾下次排除近期組合；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 喺 route 尾段 upsert。「共鳴/落淚」「揭露機制」兩條硬規同緣由 → daily-novel `CHANGELOG.md` 2026-08-13
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態
@@ -48,12 +49,12 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 
 ## 品牌／視覺
 
-App 名「顧事」；花磚圖案（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／Hero 插畫（`public/hero-cat.png`，換圖前確認授權）／配色（`--background` 白色、`--color-cream` `#f6efe0` 做卡片強調色）定案史 → daily-novel `CHANGELOG.md` 2026-07-05 條目。設計原則：花磚圖案淨用喺大面積背景／分隔帶，nav／filter pills 呢類窄小 UI 一律用素色/細線裝飾。
+App 名「顧事」；花磚（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／Hero 插畫 `public/hero-cat.png`（換圖前確認授權）／配色 `--background` 白、`--color-cream` `#f6efe0`。定案史 → daily-novel `CHANGELOG.md` 2026-07-05。設計原則：花磚圖案淨用喺大面積背景／分隔帶，nav／filter pills 呢類窄小 UI 一律用素色/細線裝飾。
 
 ## 開發須知
 
 - `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
 - `.env.local` 已經有真實 Supabase URL/anon key／DeepSeek key（gitignored，唔喺 repo 度）；`.env` 有 `GITHUB_TOKEN`（同樣 gitignored）
 - 部署去 Vercel 要手動 connect 呢個 GitHub repo 一次（`vercel.com/new`），詳見 README「部署」一節
-- ⚠️ **推送本 repo**：`python3 scripts/github_push.py "<msg>"`（GitHub API，PAT in `.env`；全 repo 鐵律「永不用 git CLI」）。Cowork **container** 跑會撞 `403 ... not enabled for this session`（sandbox 擋 api.github.com），但**經 `desktop-commander` 喺真 Mac 跑就冇事**（2026-07-31 實測 `c319031`）→ 先試 desktop-commander，唔通先 fallback `device_commit_files` 寫返 Mac。唔好用 plain git CLI 頂替。
+- ⚠️ **本 repo 獨立推**（推 daily-novel 唔會連佢一齊）：Cowork **container** 跑會撞 `403 not enabled for this session`（sandbox 擋 api.github.com）→ 經 `desktop-commander` 喺真 Mac 跑就冇事（07-31 實測 `c319031`）。
 - ⚠️ **Cowork sandbox 唔好直接喺 mounted folder 度 `git commit`/`git fetch`**：FUSE bridge 對 `.git` 內部寫入會報 `Operation not permitted`，令 `.git/index` 近乎空白。雲端要驗證改動時：喺 sandbox `/tmp` fresh clone → 複製改動檔案落去 → 喺嗰度跑 build 驗證，唔好郁 mounted folder 嘅 `.git`。
