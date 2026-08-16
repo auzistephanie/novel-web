@@ -27,6 +27,8 @@ npm install
 npm run dev
 ```
 
+> `node_modules`／`.next` 已喺 2026-08-16 清走（462MB，淨係本機生成物，`.gitignore` 已排除，唔會推 GitHub，Drive Mirror 底下純屬佔位）。開發前一定要行一次 `npm install`。
+
 需要 `.env.local`（唔 commit，見 `.env.example`）：
 
 ```
