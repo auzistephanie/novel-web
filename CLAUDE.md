@@ -1,6 +1,6 @@
 # CLAUDE.md — 顧事 novel-web
 
-由 `daily-novel`（Telegram bot 版）獨立分拆出嚟嘅網站產品。唔再推 Telegram，改做正式登入網站：故事牆、㩒鍾意、AI 定時生成個人化結局。改名／視覺／內容分流嘅決策史 → daily-novel `CHANGELOG.md`（2026-07-05 起數條）。
+由 `daily-novel`（Telegram bot 版）分拆出嚟嘅網站產品：故事牆、㩒鍾意、AI 定時生成個人化結局。決策史 → daily-novel `CHANGELOG.md`（2026-07-05 起）。
 
 ## ⚙️ Standards（MANDATORY — 正本：`stephanie-personal/docs/ai-governance/06-STANDARDS.md`，改規則只改正本）
 
@@ -13,11 +13,8 @@ Push（`github_push.py`，永不 git CLI・HTTPS・一 run 一 commit・**開工
 ## 架構
 
 - Next.js 16（App Router + TypeScript + Tailwind v4），scaffold 喺 `src/`
-- Supabase（project `cmtubaxlniglklmdwlzs`，同 trips app 共用，table 用 `novel_` 前綴分隔）：
-  - `novel_stories` — 故事本體，公開讀；DELETE 淨限 admin email（見下面 `/admin`）
-  - `novel_likes` — user 鍾意記錄，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
-  - `novel_endings` — AI 生成嘅個人化結局，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
-- 故事生成／寫入用 `SUPABASE_SERVICE_ROLE_KEY`（Vercel env，見下「Scheduled generation」）；結局用 app 自己嘅 DeepSeek key（見下）；刪除故事靠 RLS policy，唔使 service-role key
+- Supabase（project `cmtubaxlniglklmdwlzs`，同 trips app 共用，table 用 `novel_` 前綴）：`novel_stories`（故事本體，公開讀 published，DELETE 限 admin）／`novel_likes`／`novel_endings`（兩者 RLS 淨本人，FK cascade 跟 `novel_stories`）
+- 故事生成／寫入用 `SUPABASE_SERVICE_ROLE_KEY`；結局用 app 自己 DeepSeek key；刪除靠 RLS policy 唔使 service-role key
 
 ## 頁面
 
@@ -38,7 +35,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`：揀「骨架」（identity_reveal/contract_marriage/power_clash，5:3:2 權重）→ 獨立 slot 池組情節 → `gen_meta` 記低落 DB 俾下次排除近期組合；DeepSeek 生成＋code validate＋self-check，唔合格 retry 3 次；heartbeat 喺 route 尾段 upsert。「共鳴/落淚」「揭露機制」兩條硬規同緣由 → daily-novel `CHANGELOG.md` 2026-08-13
+- 邏輯全部喺 `route.ts`：揀骨架（identity_reveal/contract_marriage/power_clash，5:3:2 權重）→ 獨立 slot 池組情節 → `gen_meta` 記低俾下次排除近期組合；正文 **deepseek-v4-pro+thinking:high**（2026-08-17 換，"deepseek-chat" 係死名一路 alias 去 v4-flash）＋code validate＋self-check，retry 3 次；生成完先落 `status='pending'`（公開頁查詢全部只揀 `published`），`/admin` 待審批准先上架，唔要→`rejected`（唔刪，存低診斷）；heartbeat 喺 route 尾段 upsert。硬規／緣由 → `CHANGELOG.md` 2026-08-13、2026-08-17
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態
@@ -49,7 +46,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 
 ## 品牌／視覺
 
-App 名「顧事」；花磚（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／Hero 插畫 `public/hero-cat.png`（換圖前確認授權）／配色 `--background` 白、`--color-cream` `#f6efe0`。定案史 → daily-novel `CHANGELOG.md` 2026-07-05。設計原則：花磚圖案淨用喺大面積背景／分隔帶，nav／filter pills 呢類窄小 UI 一律用素色/細線裝飾。
+App 名「顧事」；花磚（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／Hero 插畫 `public/hero-cat.png`（換圖前確認授權）。定案史 → `CHANGELOG.md` 2026-07-05。花磚圖案淨用大面積背景／分隔帶，nav／filter pills 呢類窄小 UI 用素色/細線。
 
 ## 開發須知
 
