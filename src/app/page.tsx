@@ -14,15 +14,13 @@ export default async function HomePage() {
   const { data: stories } = await supabase
     .from("novel_stories")
     .select(COLS)
-    .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(60)
     .returns<Story[]>();
 
   const { count: storyCount } = await supabase
     .from("novel_stories")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "published");
+    .select("id", { count: "exact", head: true });
 
   const list = stories ?? [];
 
@@ -111,3 +109,4 @@ export default async function HomePage() {
     </>
   );
 }
+

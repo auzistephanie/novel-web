@@ -15,7 +15,6 @@ export default async function SerialPage({
   const { data } = await supabase
     .from("novel_stories")
     .select(COLS)
-    .eq("status", "published")
     .or("story_type.neq.short,story_type.is.null")
     .order("created_at", { ascending: false })
     .limit(200)
@@ -49,3 +48,4 @@ export default async function SerialPage({
     </main>
   );
 }
+

@@ -15,11 +15,7 @@ export async function deepseekChat(
     temperature?: number;
     maxTokens?: number;
     timeoutMs?: number;
-    model?: string; // 2026-08-17：deepseek-chat 係已停用舊名（2026-07-24 起被動態 alias 去 v4-flash），
-    // 之前以為換咗做「求文筆質感」嘅版本其實一路都係跑緊 v4-flash——冇真正換過 model。
-    // 而家故事生成正文明確指定 deepseek-v4-pro；結局即時生成/自我檢查呢類分類任務維持 v4-flash 求速度。
-    thinking?: "enabled" | "disabled"; // 2026-08-17 新增：deepseek-v4-pro/flash 支援 thinking mode，預設 disabled 唔影響舊call。
-    reasoningEffort?: "low" | "high" | "max"; // 只喺 thinking:"enabled" 先有意義
+    model?: string; // 2026-08-01：故事生成（novel-story-generator）改用 deepseek-chat 求文筆質感，結局即時生成維持 deepseek-v4-flash 求速度
   } = {}
 ): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
@@ -39,10 +35,7 @@ export async function deepseekChat(
       },
       body: JSON.stringify({
         model: opts.model ?? "deepseek-v4-flash",
-        thinking: { type: opts.thinking ?? "disabled" },
-        ...(opts.thinking === "enabled" && opts.reasoningEffort
-          ? { reasoning_effort: opts.reasoningEffort }
-          : {}),
+        thinking: { type: "disabled" },
         messages,
         temperature: opts.temperature ?? 0.9,
         max_tokens: opts.maxTokens ?? 1200,
@@ -91,3 +84,4 @@ export function extractJsonArray(raw: string): string[] {
   }
   return [];
 }
+

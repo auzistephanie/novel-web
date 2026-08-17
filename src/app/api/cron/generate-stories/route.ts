@@ -11,14 +11,6 @@ import { deepseekChat, LANG_RULE } from "@/lib/deepseek";
 // 變做三個骨架隨機揀（身份反差揭穿／契約婚姻先婚後愛／雙強對峙），每個骨架用自己嘅slot池；
 // 加埋 gen_meta 記低每篇用咗邊個骨架+slot，下次生成排除近期用過嘅組合，解決「似曾相識」根源。
 // 詳細决策脈絡見 daily-novel CHANGELOG.md 同日條目。
-//
-// 2026-08-17：08-13 嗰輪跑咗幾日，Stephanie 話質素仍然全部唔收貨（AI腔/老土/唔夠打動/邏輯牽強
-// 四樣都中），查 DB 先發現由 07-31 之後一篇新故事都冇存活過——即係每日都生成緊但全部俾佢刪晒，
-// 冇留低樣本可以診斷。同時揭發正文生成一路用緊 model:"deepseek-chat"，但呢個名 07-24 已經
-// 停用、靜靜哋 alias 去 v4-flash——08-01 話「換 deepseek-chat 求文筆質感」其實從來冇真正生效過。
-// 呢次改：① 正文生成正式換做 deepseek-v4-pro + thinking:high（見 generateOne 入面嘅
-// deepseekChat call）；② 加 status 審核閘（pending → published/rejected），Stephanie 喺
-// /admin 睇完先批准先上公開頁，rejected 存低唔刪，之後先有真樣本可以診斷。詳見 CHANGELOG。
 export const maxDuration = 300;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -252,9 +244,7 @@ async function selfCheckClosure(content: string, storyType: StoryType): Promise<
       { role: "system", content: "你是嚴格嘅編輯，只答「合格」或「不合格」，唔好加任何其他文字。" },
       { role: "user", content: `${question}\n\n故事結尾部分：\n${content.slice(-600)}` },
     ],
-    // 純分類任務，唔需要 v4-pro/thinking，維持 v4-flash 求快（"deepseek-chat" 呢個舊名已停用，
-    // 一路靜靜哋被 alias 去 v4-flash，而家改用返正式名，避免將來 alias 突然被撤走就死）
-    { model: "deepseek-v4-flash", temperature: 0, maxTokens: 10, timeoutMs: 30_000 }
+    { model: "deepseek-chat", temperature: 0, maxTokens: 10, timeoutMs: 30_000 }
   );
   return raw.includes("合格") && !raw.includes("不合格");
 }
@@ -342,20 +332,7 @@ async function generateOne(
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      // 2026-08-17：正文生成正式換做 deepseek-v4-pro + thinking（之前用嘅 "deepseek-chat"
-      // 係已停用舊名，一路靜靜哋 alias 去 v4-flash，即係一直冇真正用過分別開嘅高質素模型）。
-      // ⚠️ 出街前用真 API key 三向 A/B 測過（disabled/low/high，同一個 prompt）：reasoning_effort:"high"
-      // 會爆晒 6000 token 預算去諗嘢，content 直接 0 字（reasoning_tokens 同 completion_tokens 係共用同一個
-      // max_tokens 上限，唔係額外計）！"low" 先啱：reasoning 淨用幾百 token，content 照樣寫齊，
-      // 質素仲好過 disabled（揭露機制跟到規、收尾金句夠screenshot感），千祈唔好手多調返 high。
-      {
-        model: "deepseek-v4-pro",
-        thinking: "enabled",
-        reasoningEffort: "low",
-        temperature: 1.05,
-        maxTokens: 7500,
-        timeoutMs: 120_000,
-      }
+      { model: "deepseek-chat", temperature: 1.05, maxTokens: 6000, timeoutMs: 120_000 }
     );
     const titleMatch = raw.split("===TITLE===")[1]?.split("===CONTENT===")[0]?.trim() ?? "";
     let content = raw.split("===CONTENT===")[1]?.trim() ?? "";
@@ -432,10 +409,7 @@ export async function GET(req: NextRequest) {
         protagonist: story.protagonist,
         content: story.content,
         story_type: storyType,
-        // 2026-08-17：加審核閘——生成完先落 pending，Stephanie 喺 /admin 睇完先揀批准／唔要，
-        // 唔要嘅唔再直接刪（存低做診斷樣本），詳見 CHANGELOG 同日條目。
-        status: "pending",
-        gen_meta: { ...story.genMeta, validateNote: story.validateNote, retries: story.retries },
+        gen_meta: story.genMeta,
       });
       results.push({
         storyType,
@@ -459,3 +433,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, results });
 }
+

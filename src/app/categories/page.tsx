@@ -6,10 +6,7 @@ export const revalidate = 0;
 
 export default async function CategoriesPage() {
   const supabase = await createClient();
-  const { data: rows } = await supabase
-    .from("novel_stories")
-    .select("genre")
-    .eq("status", "published");
+  const { data: rows } = await supabase.from("novel_stories").select("genre");
 
   const counts = new Map<
     string,
@@ -72,3 +69,4 @@ export default async function CategoriesPage() {
     </main>
   );
 }
+

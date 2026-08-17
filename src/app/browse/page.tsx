@@ -30,7 +30,6 @@ export default async function BrowsePage({
   let query = supabase
     .from("novel_stories")
     .select(COLS)
-    .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -74,3 +73,4 @@ export default async function BrowsePage({
     </main>
   );
 }
+

@@ -14,7 +14,6 @@ export default async function ShortPage({
   const { data } = await supabase
     .from("novel_stories")
     .select(COLS)
-    .eq("status", "published")
     .eq("story_type", "short")
     .order("created_at", { ascending: false })
     .limit(200)
@@ -46,3 +45,4 @@ export default async function ShortPage({
     </main>
   );
 }
+
