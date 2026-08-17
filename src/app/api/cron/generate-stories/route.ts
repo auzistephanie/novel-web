@@ -342,16 +342,19 @@ async function generateOne(
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      // 2026-08-17：正文生成正式換做 deepseek-v4-pro + thinking:high（之前用嘅 "deepseek-chat"
+      // 2026-08-17：正文生成正式換做 deepseek-v4-pro + thinking（之前用嘅 "deepseek-chat"
       // 係已停用舊名，一路靜靜哋 alias 去 v4-flash，即係一直冇真正用過分別開嘅高質素模型）。
-      // thinking 令單次回應變慢，timeoutMs 相應調高；如果成日撞 timeout，先諗降去 reasoningEffort:"low"。
+      // ⚠️ 出街前用真 API key 三向 A/B 測過（disabled/low/high，同一個 prompt）：reasoning_effort:"high"
+      // 會爆晒 6000 token 預算去諗嘢，content 直接 0 字（reasoning_tokens 同 completion_tokens 係共用同一個
+      // max_tokens 上限，唔係額外計）！"low" 先啱：reasoning 淨用幾百 token，content 照樣寫齊，
+      // 質素仲好過 disabled（揭露機制跟到規、收尾金句夠screenshot感），千祈唔好手多調返 high。
       {
         model: "deepseek-v4-pro",
         thinking: "enabled",
-        reasoningEffort: "high",
+        reasoningEffort: "low",
         temperature: 1.05,
-        maxTokens: 6000,
-        timeoutMs: 150_000,
+        maxTokens: 7500,
+        timeoutMs: 120_000,
       }
     );
     const titleMatch = raw.split("===TITLE===")[1]?.split("===CONTENT===")[0]?.trim() ?? "";
