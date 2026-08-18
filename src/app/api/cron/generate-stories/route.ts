@@ -155,15 +155,17 @@ const STYLE_2026 = `
 【必須使用繁體字（Traditional Chinese），絕對唔可以出現簡體字（Simplified Chinese），呢個規定優先過任何其他規則】
 ${LANG_RULE}
 
-【五條創作原則（2026-08-18，取代舊版清單式規則）】
+【六條創作原則（2026-08-19 修訂，加崩防位）】
 1. 具體壓倒抽象：全篇每個關鍵情緒/轉折位，一定要用一個具體到得返一次嘅細節（一個動作、一件物件、一句原話）嚟寫，唔可以用形容詞概括代替（唔准寫「佢很紳士」，要寫「佢幫你開門嗰陣，手指尾勾住門框」呢類具體畫面）。
 2. 一場一景，唔准總結跳接：全篇淨可以有 1-2 個實際發生緊嘅場景，唔可以用「幾日後」「漸漸地」「相處左一段時間」呢類詞跳接時間，情感轉變一定要喺場景入面用一個具體時刻完成。開場即入場景（第一句就係現場嘅動作/對白/具體畫面），唔准用背景介紹起筆。
 3. 表面想要 vs 真正怕：女主男主各自要有一個「表面想要嘅嘢」同一個「真正怕嘅嘢」，兩個要有矛盾——故事嘅張力嚟自呢個內在矛盾，唔淨係嚟自外部事件（相親/契約/對峙）。
 4. 信任讀者：寫完一個動作或者對白之後，唔准即刻補一句解釋角色點解咁做/佢而家嘅心情——留返俾讀者自己睇得出。
 5. 一個貫穿全篇嘅意象：開場揀一件具體物件或者細節，全篇最少出現三次，最後一次出現要帶住新意義（同開場嗰次唔一樣嘅感覺），令結尾可以扣返轉頭。
+6. 一定要有崩防位：全篇最少一個位，主角原本壓住嘅情緒/防備要徹底崩潰一次——用具體反應寫出嚟（喊出聲、聲音變、手震），唔可以由頭到尾都係「忍住」「沒說話」帶過，冇宣洩位嘅故事唔算完整。
 
 【底線技術要求（唔可以違反）】
 - 女主/主角要「發瘋、反套路、夠飒」——用擺爛、將計就計、發瘋輸出等手段自救，唔靠傳統隱忍、哭泣、等人拯救。
+- 深情要用主動付出、共同經歷嘅具體時刻嚟表現，唔可以寫成「長期記錄/監視對方一舉一動」（例如寫本子記低對方習慣、偷偷觀察好耐）——呢類寫法讀落有跟蹤狂感，唔係浪漫。
 - 標題禁止「XX的YY」「XX之YY」呢類公式化句式。
 - 絕對唔可以出現：商戰/職場鬥爭、鬼怪/靈異/恐怖元素。
 
@@ -174,6 +176,8 @@ ${LANG_RULE}
 【揭露機制硬規（2026-08-13，2026-08-18 加第4選項）】
 - 秘密／身份反差／心事點樣被發現，唔准用「翻舊物／搵到證物／解鎖舊裝置／偷睇日記」呢類方式——呢類寫法要解釋一大堆「點解物件會留喺度」「點解事隔幾年先發現」，愈解釋愈假，讀者一睇就出戲。
 - 一律用以下其中一種：①即時撞破（當場撞見對方正在做緊嗰件事）②第三者當場講漏嘴（唔知情嘅旁人講出真相）③直接對峙（一方主動攤牌講出嚟）④心聲/內心話唔小心被聽到或者講咗出嚟。
+
+※ 標題另外由generateTitle()獨立生成（2026-08-19），呢度唔使理標題，淨係專注寫內容。
 `;
 
 const SERIAL_STRUCTURE = `
@@ -240,29 +244,70 @@ function recentSlotValues(metas: GenMeta[], skeleton: Skeleton, key: string, win
   );
 }
 
-function validate(
-  content: string,
-  title: string,
-  storyType: StoryType,
-  recentTitles: string[]
-): string[] {
+// 2026-08-19：validate 拆做content/title兩個函數，配合「先寫內容、後起標題」嘅兩次call設計
+// ——起因：試過用同一次call「寫完內文先諗標題」，發現DeepSeek成日寫完內文就唔記得再輸出標題
+// （finish_reason=stop但冇===TITLE===），改用獨立嘅generateTitle() call，保證標題一定睇住實際內文嚟諗。
+function validateContent(content: string, storyType: StoryType): string[] {
   const fails: string[] = [];
   const minLen = storyType === "serial" ? 2200 : 1500;
   if (content.length < minLen) fails.push(`字數不足(${content.length}<${minLen})`);
-  if (TITLE_FORMULAIC.test(title)) fails.push("標題formulaic pattern");
   for (const ch of SIMPLIFIED_ONLY) {
-    if (content.includes(ch) || title.includes(ch)) fails.push(`簡體字:${ch}`);
+    if (content.includes(ch)) fails.push(`簡體字:${ch}`);
   }
   for (const w of CANTONESE_SAFE) {
-    if (content.includes(w) || title.includes(w)) fails.push(`粵語詞:${w}`);
+    if (content.includes(w)) fails.push(`粵語詞:${w}`);
   }
   for (const c of AI_CLICHES) {
     if (content.includes(c)) fails.push(`AI陳套詞:${c}`);
+  }
+  return fails;
+}
+
+function validateTitle(title: string, recentTitles: string[]): string[] {
+  const fails: string[] = [];
+  if (!title) fails.push("標題為空");
+  if (TITLE_FORMULAIC.test(title)) fails.push("標題formulaic pattern");
+  for (const ch of SIMPLIFIED_ONLY) {
+    if (title.includes(ch)) fails.push(`簡體字:${ch}`);
+  }
+  for (const w of CANTONESE_SAFE) {
+    if (title.includes(w)) fails.push(`粵語詞:${w}`);
   }
   for (const rt of recentTitles) {
     if (rt && (title.includes(rt) || rt.includes(title))) fails.push("標題撞近期");
   }
   return fails;
+}
+
+// 獨立標題生成：畀返實際已經寫低嘅內文AI，逼佢一定要根據真實內容諗標題，
+// 唔會再出現「標題講咗個內文冇嘅戲劇化場面」嘅走數情況。
+async function generateTitle(content: string, recentTitles: string[]): Promise<string> {
+  const systemMsg =
+    `你係專業網絡小說編輯，負責幫故事諗一個吸引嘅標題。\n` +
+    `【標題規則】\n` +
+    `- 標題一定要用全文入面真實出現過嘅具體畫面、對白或者情節嚟寫，唔可以作一個全文冇出現過嘅戲劇化場面。\n` +
+    `- 唔准用「XX的YY」「XX之YY」句式，要用場景/衝突/懸念感嚟寫，令人一睇就有畫面、想知後續。\n` +
+    `- 必須用繁體字，唔可以有簡體字或粵語口語詞（例如「嘅」「唔」「佢」「咗」「冇」）。\n` +
+    `淨係輸出標題本身，唔好加引號、解釋或者其他文字。`;
+  let userMsg =
+    `以下係故事全文，請根據呢個故事嘅實際內容諗一個標題：\n\n${content}\n\n` +
+    `近期已用標題（唔可以同呢啲重複或高度相似）：${recentTitles.join("、") || "無"}`;
+  let lastTitle = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const raw = await deepseekChat(
+      [
+        { role: "system", content: systemMsg },
+        { role: "user", content: userMsg },
+      ],
+      { model: "deepseek-chat", temperature: 1.0, maxTokens: 100, timeoutMs: 60_000 }
+    );
+    const title = raw.trim().replace(/^["「『]+|["」』]+$/g, "");
+    lastTitle = title;
+    const fails = validateTitle(title, recentTitles);
+    if (fails.length === 0) return title;
+    userMsg = `${userMsg}\n\n⚠️上一次個標題「${title}」唔合格，原因：${fails.join("；")}。請重新諗過。`;
+  }
+  return lastTitle;
 }
 
 // 輕量 DeepSeek 自我檢查：closure(short)/cliffhanger(serial) 呢啲要閱讀理解嘅檢查，code 做唔到
@@ -356,20 +401,20 @@ async function generateOne(
   const heroName = pickName(heroSurnameExclude, MALE_GIVEN);
 
   const structure = storyType === "serial" ? SERIAL_STRUCTURE : SHORT_STRUCTURE;
-  const systemMsg = `${STYLE_2026}\n${structure}\n近期已用標題（唔可以同呢啲重複或高度相似）：${recentTitles.join("、")}`;
+  const systemMsg = `${STYLE_2026}\n${structure}`;
 
   const baseUserMsg =
     `${skeletonPrompt}\n` +
     `女主姓名：${heroineName}，男主姓名：${heroName}（可微調，但唔好改姓氏）。\n` +
     `story_type：${storyType}。\n` +
-    `為呢個故事定一個吸引嘅標題（唔好用「XX的YY」句式，要有具體反差/懸念）。\n` +
-    `輸出格式必須係：\n===TITLE===\n（標題）\n===CONTENT===\n（全文）\n===END===\n唔好加任何其他文字或解釋。`;
+    `淨係寫全文內容，唔使諗標題（標題另外處理）。\n` +
+    `輸出格式必須係：\n===CONTENT===\n（全文）\n===END===\n唔好加任何其他文字或解釋。`;
 
   let userMsg = baseUserMsg;
-  let lastTitle = "";
   let lastContent = "";
   let retries = 0;
   let validateNote = "";
+  let content = "";
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const raw = await deepseekChat(
@@ -379,25 +424,16 @@ async function generateOne(
       ],
       { model: "deepseek-chat", temperature: 1.05, maxTokens: 6000, timeoutMs: 120_000 }
     );
-    const titleMatch = raw.split("===TITLE===")[1]?.split("===CONTENT===")[0]?.trim() ?? "";
-    let content = raw.split("===CONTENT===")[1]?.trim() ?? "";
-    content = content.replace(/===END===\s*$/, "").trim();
-    lastTitle = titleMatch;
+    content = (raw.split("===CONTENT===")[1]?.split("===END===")[0]?.trim()) || raw.trim();
     lastContent = content;
 
-    const fails = validate(content, titleMatch, storyType, recentTitles);
+    const fails = validateContent(content, storyType);
     if (fails.length === 0) {
       const closureOk = await selfCheckClosure(content, storyType).catch(() => true);
       if (closureOk) {
-        return {
-          genre,
-          title: titleMatch,
-          protagonist: `${heroineName}、${heroName}`,
-          content,
-          retries: attempt,
-          validateNote: "PASS",
-          genMeta,
-        };
+        validateNote = "PASS";
+        retries = attempt;
+        break;
       }
       fails.push(storyType === "short" ? "冇完整收尾" : "冇停喺抉擇節點");
     }
@@ -407,13 +443,15 @@ async function generateOne(
     userMsg = `${baseUserMsg}\n\n⚠️重call:上一次唔合格，原因：${validateNote}。請修正返呢啲問題再寫一次。`;
   }
 
+  const title = await generateTitle(content || lastContent, recentTitles);
+
   return {
     genre,
-    title: lastTitle,
+    title,
     protagonist: `${heroineName}、${heroName}`,
-    content: lastContent,
+    content: content || lastContent,
     retries,
-    validateNote: `⚠️未過validate：${validateNote}`,
+    validateNote: validateNote === "PASS" ? "PASS" : `⚠️未過validate：${validateNote}`,
     genMeta,
   };
 }
