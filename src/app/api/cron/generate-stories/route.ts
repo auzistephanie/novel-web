@@ -84,12 +84,37 @@ const CLASH_TURNS = [
   "你哋各自嘅底牌被同一件事同時揭穿",
 ];
 
-// ---------- 骨架選擇（帶權重，identity_reveal 仍係主力，新兩個逐步試水溫）----------
-type Skeleton = "identity_reveal" | "contract_marriage" | "power_clash";
+// ---------- 骨架 D：雙向救贖／虐戀治癒（2026-08-18 新增，兩個各自帶傷嘅人喺相處中治癒對方，
+// 唔靠身份反差/揭穿/較量，張力嚟自「表面想要 vs 真正怕」嘅內在矛盾撞埋一齊。來源：2026 短劇市場《那年冬至》
+// 《老板他暗恋我》兩類「雙向救贖/虐戀治癒」爆款，Stephanie 確認加。）----------
+const HEALING_WOUNDS = [
+  "曾經因為信錯人而傾家蕩產，從此唔敢再信任何人",
+  "細個俾父母忽略，一直用死命工作證明自己值得被愛",
+  "上一段感情因為自己嘅懦弱錯過咗，一直悔恨",
+  "照顧患病嘅家人好多年，忘記咗點樣為自己而活",
+  "曾經嘅夢想俾現實磨滅，而家得返個「過日子」",
+  "細個經歷父母離婚，一直唔相信關係可以長久",
+  "工作上一次重大失誤累到人受傷，一直活喺自責入面",
+  "曾經係人群焦點，而家因為一件事跌落谷底，唔敢再面對人",
+];
+
+const HEALING_TRIGGERS = [
+  "喺對方防備最低嗰一刻，撞見咗佢平時唔會俾人睇到嘅一面",
+  "無意中講出一句戳中對方心事嘅說話，發現對方反應異常",
+  "一件本身平常嘅小事，觸發咗對方壓抑好耐嘅情緒",
+  "陪對方行返一次佢一直逃避嘅地方",
+  "對方喺你面前第一次流露脆弱，冇再扮冇事",
+  "發現大家因為各自嘅傷口，都做過同一種選擇",
+];
+
+// ---------- 骨架選擇（帶權重。2026-08-18：由 5:3:2 調做 4:3:2:3，降低 identity_reveal 佔比
+// （原本一半故事都行呢條線，係「篇篇都似」嘅主因之一），四個骨架分佈更平均）----------
+type Skeleton = "identity_reveal" | "contract_marriage" | "power_clash" | "mutual_healing";
 const SKELETON_WEIGHTS: { key: Skeleton; weight: number }[] = [
-  { key: "identity_reveal", weight: 5 },
+  { key: "identity_reveal", weight: 4 },
   { key: "contract_marriage", weight: 3 },
   { key: "power_clash", weight: 2 },
+  { key: "mutual_healing", weight: 3 },
 ];
 
 function pickSkeleton(exclude: Set<Skeleton>): Skeleton {
@@ -115,34 +140,40 @@ const GENRE_TAGS_BY_SKELETON: Record<Skeleton, string[]> = {
   ],
   contract_marriage: ["契約婚姻", "假戲真做"],
   power_clash: ["強強交鋒"],
+  mutual_healing: ["雙向救贖", "治癒系"], // 2026-08-18 新增，genreCategories.ts 已歸落 revenge-romance（虐戀屬性相近）
 };
 
 const SURNAMES = ["沈", "陸", "江", "顧", "蘇", "林", "周", "程", "宋", "謝", "封", "傅", "聞", "盛", "時", "樓", "席", "慕", "厲", "荀", "崔", "裴"];
 const FEMALE_GIVEN = ["知微", "知意", "薏", "清昭", "念安", "疏影", "望舒", "宛卿", "憶蘿", "簡遙", "南星", "如晚", "青禾", "思螢", "蘇黎"];
 const MALE_GIVEN = ["沉硏", "臨渊", "行舟", "景琛", "亦臻", "聞禮", "執", "衍之", "聲遠", "承宴", "修白", "緘言"];
 
-// ---------- House Style（2026 番茄風向修正版）----------
+// ---------- House Style（2026-08-18 精簡版：由十幾條清單式規則收做5條創作原則
+// ——起因：Stephanie 反饋清單式規則令模型「逐條打勾」，寫出嚟係「達標文」唔係「作品」，
+// 舊規則太多互相衝突（例如「每400字一個反轉」同「慢熱鋪陳先打動人」正面撞），
+// 改用有層次嘅創作原則代替。詳細決策脈絡 → daily-novel CHANGELOG.md 2026-08-18）----------
 const STYLE_2026 = `
 【必須使用繁體字（Traditional Chinese），絕對唔可以出現簡體字（Simplified Chinese），呢個規定優先過任何其他規則】
 ${LANG_RULE}
 
-【2026 番茄風向修正版 House Style】
-- 女主/主角要「發瘋、反套路、夠飒」——用擺爛、將計就計、發瘋輸出等手段自救，唔靠傳統隱忍、哭泣、等人拯救。
-- 開場100–150字內必須拋出核心衝突同埋一個爽點/鉤子，唔可以慢熱鋪陳背景。第一句就要係衝突現場或者一句反常對白。
-- 對白要夠張力，帶推進劇情或者打臉效果，唔好寫成閒聊。
-- 每400字左右一個小反轉或爆點。
-- 絕對唔可以出現：商戰/職場鬥爭、鬼怪/靈異/恐怖元素。
-- 開頭第一句禁止用背景介紹起筆，必須由衝突現場、對白或動作切入。
-- 標題禁止「XX的YY」「XX之YY」呢類公式化句式。
+【五條創作原則（2026-08-18，取代舊版清單式規則）】
+1. 具體壓倒抽象：全篇每個關鍵情緒/轉折位，一定要用一個具體到得返一次嘅細節（一個動作、一件物件、一句原話）嚟寫，唔可以用形容詞概括代替（唔准寫「佢很紳士」，要寫「佢幫你開門嗰陣，手指尾勾住門框」呢類具體畫面）。
+2. 一場一景，唔准總結跳接：全篇淨可以有 1-2 個實際發生緊嘅場景，唔可以用「幾日後」「漸漸地」「相處左一段時間」呢類詞跳接時間，情感轉變一定要喺場景入面用一個具體時刻完成。開場即入場景（第一句就係現場嘅動作/對白/具體畫面），唔准用背景介紹起筆。
+3. 表面想要 vs 真正怕：女主男主各自要有一個「表面想要嘅嘢」同一個「真正怕嘅嘢」，兩個要有矛盾——故事嘅張力嚟自呢個內在矛盾，唔淨係嚟自外部事件（相親/契約/對峙）。
+4. 信任讀者：寫完一個動作或者對白之後，唔准即刻補一句解釋角色點解咁做/佢而家嘅心情——留返俾讀者自己睇得出。
+5. 一個貫穿全篇嘅意象：開場揀一件具體物件或者細節，全篇最少出現三次，最後一次出現要帶住新意義（同開場嗰次唔一樣嘅感覺），令結尾可以扣返轉頭。
 
-【共鳴／落淚硬規（2026-08-13 新增，Stephanie 反饋故事唔夠打動人之後加）】
-- 故事核心情感要揀普通人親身經歷過嘅心理狀態（錯過、後悔、唔敢講出口、犧牲、被忽略），唔可以淨係靠身份反差/打臉嘅爽感撐全場——要有一個位令讀者諗返自己嘅真實經歷。
-- 情感高潮／收尾一律用具體動作、物件細節或者對白停頓帶出，絕對唔准直接寫出情緒本身（呢類詞已加入下面陳套詞名單，一律禁止）。
+【底線技術要求（唔可以違反）】
+- 女主/主角要「發瘋、反套路、夠飒」——用擺爛、將計就計、發瘋輸出等手段自救，唔靠傳統隱忍、哭泣、等人拯救。
+- 標題禁止「XX的YY」「XX之YY」呢類公式化句式。
+- 絕對唔可以出現：商戰/職場鬥爭、鬼怪/靈異/恐怖元素。
+
+【共鳴／落淚硬規（2026-08-13）】
+- 故事核心情感要揀普通人親身經歷過嘅心理狀態（錯過、後悔、唔敢講出口、犧牲、被忽略），唔可以淨係靠身份反差/打臉嘅爽感撐全場。
 - 全篇最後一句要寫到可以獨立截圖、唔使前文都睇得明、想令人分享出去嘅程度。
 
-【揭露機制硬規（2026-08-13 新增）】
-- 秘密／身份反差點樣被發現，唔准用「翻舊物／搵到證物／解鎖舊裝置／偷睇日記」呢類方式——呢類寫法要解釋一大堆「點解物件會留喺度」「點解事隔幾年先發現」，愈解釋愈假，讀者一睇就出戲。
-- 一律用以下其中一種：①即時撞破（當場撞見對方正在做緊嗰件事）②第三者當場講漏嘴（唔知情嘅旁人講出真相）③直接對峙（一方主動攤牌講出嚟）。
+【揭露機制硬規（2026-08-13，2026-08-18 加第4選項）】
+- 秘密／身份反差／心事點樣被發現，唔准用「翻舊物／搵到證物／解鎖舊裝置／偷睇日記」呢類方式——呢類寫法要解釋一大堆「點解物件會留喺度」「點解事隔幾年先發現」，愈解釋愈假，讀者一睇就出戲。
+- 一律用以下其中一種：①即時撞破（當場撞見對方正在做緊嗰件事）②第三者當場講漏嘴（唔知情嘅旁人講出真相）③直接對峙（一方主動攤牌講出嚟）④心聲/內心話唔小心被聽到或者講咗出嚟。
 `;
 
 const SERIAL_STRUCTURE = `
@@ -195,7 +226,8 @@ type StoryType = "serial" | "short";
 type GenMeta =
   | { skeleton: "identity_reveal"; situation: string; identity: string; event: string; twist: string }
   | { skeleton: "contract_marriage"; reason: string; spark: string }
-  | { skeleton: "power_clash"; arena: string; turn: string };
+  | { skeleton: "power_clash"; arena: string; turn: string }
+  | { skeleton: "mutual_healing"; heroineWound: string; heroWound: string; trigger: string };
 
 // 攞返近期（同骨架先計）用過嘅某個slot欄位嘅值，做排除集合
 function recentSlotValues(metas: GenMeta[], skeleton: Skeleton, key: string, window = 8): Set<string> {
@@ -276,14 +308,27 @@ function buildSkeletonPrompt(
       genrePool: GENRE_TAGS_BY_SKELETON.contract_marriage,
     };
   }
-  const arena = pick(CLASH_ARENAS, recentSlotValues(recentMetas, skeleton, "arena"));
-  const turn = pick(CLASH_TURNS, recentSlotValues(recentMetas, skeleton, "turn"));
+  if (skeleton === "power_clash") {
+    const arena = pick(CLASH_ARENAS, recentSlotValues(recentMetas, skeleton, "arena"));
+    const turn = pick(CLASH_TURNS, recentSlotValues(recentMetas, skeleton, "turn"));
+    return {
+      skeletonPrompt:
+        `骨架：雙強對峙。男女主雙方都要寫得同樣強、同樣有主見，唔准一方明顯強過另一方，冇秘密身份要隱藏，張力嚟自對等較量。\n` +
+        `較量場景：${arena}\n轉折位：${turn}`,
+      genMeta: { skeleton, arena, turn },
+      genrePool: GENRE_TAGS_BY_SKELETON.power_clash,
+    };
+  }
+  const heroineWound = pick(HEALING_WOUNDS, recentSlotValues(recentMetas, skeleton, "heroineWound"));
+  const heroWoundExclude = new Set([...recentSlotValues(recentMetas, skeleton, "heroWound"), heroineWound]);
+  const heroWound = pick(HEALING_WOUNDS, heroWoundExclude);
+  const trigger = pick(HEALING_TRIGGERS, recentSlotValues(recentMetas, skeleton, "trigger"));
   return {
     skeletonPrompt:
-      `骨架：雙強對峙。男女主雙方都要寫得同樣強、同樣有主見，唔准一方明顯強過另一方，冇秘密身份要隱藏，張力嚟自對等較量。\n` +
-      `較量場景：${arena}\n轉折位：${turn}`,
-    genMeta: { skeleton, arena, turn },
-    genrePool: GENRE_TAGS_BY_SKELETON.power_clash,
+      `骨架：雙向救贖/虐戀治癒。呢個骨架唔靠身份反差/揭穿/較量，張力嚟自兩個人各自帶嘅內在傷口——套用創作原則3（表面想要 vs 真正怕），兩人嘅傷口要喺相處入面慢慢浮現，唔可以一開波就攤晒出嚟。\n` +
+      `女主嘅傷口：${heroineWound}\n男主嘅傷口：${heroWound}\n觸發治癒嘅契機：${trigger}`,
+    genMeta: { skeleton, heroineWound, heroWound, trigger },
+    genrePool: GENRE_TAGS_BY_SKELETON.mutual_healing,
   };
 }
 

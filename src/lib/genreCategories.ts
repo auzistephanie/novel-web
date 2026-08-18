@@ -35,6 +35,8 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "追妻火葬場",
       "雙重生",
       "家族發瘋",
+      "雙向救贖", // 2026-08-18 新骨架 mutual_healing 用，虐戀屬性相近
+      "治癒系",
     ],
     color: { bar: "#7a3b32", text: "#7a3b32", bg: "rgba(122,59,50,0.1)" }, // 酒紅棕
   },
