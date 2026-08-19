@@ -20,181 +20,226 @@ function admin() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 }
 
-// ---------- 骨架 A：身份反差揭穿（原有嘅4-slot生成器）----------
-const HEROINE_SITUATIONS = [
-  "被逼相親嘅普通上班族", "閨蜜懇求出手嘅工具人", "剛被劈腿嘅前女友", "家道中落嘅千金",
-  "劇本裡嘅炮灰女配", "被誤認身份嘅路人甲", "代打/代班嘅臨時工", "發現未婚夫出軌嘅準新娘",
-  "被裁員嘅背景板同事", "被家族逼婚嘅庶女/私生女", "相親市場滯銷嘅大齡剩女人設",
-  "替身新娘/替嫁上場嘅妹妹", "被公司當炮灰派去談判嘅新人", "被誤會設局嘅實習生",
+// ================================================================================
+// 2026-08-19（大改）：骨架+slot 隨機拼砌系統整套換走，改用「Hook 引擎 + Premise-First」。
+// 起因：Stephanie 連續四輪反饋「悶、冇 feeling、冇人想睇」，其中最關鍵一個測試——
+// 由 Claude 人手精寫、完全符合舊 STYLE_2026 規則嘅一篇，佢一樣評「悶」——證明問題唔喺
+// model 能力，而喺「舊規則定義嘅好」本身就唔係目標市場要嘅嘢。舊規則（一場一景／信任讀者／
+// 意象貫穿／克制留白）係純文學美學；目標市場係 2026 短劇爽文（每分鐘 3-4 個情緒爆點、
+// 3 秒決定去留、打臉逆襲轉化率係純愛情向 2.3 倍）。經 Gemini 外部 review 確認同一診斷。
+//
+// ⚠️ 08-03 Stephanie 實際講嘅係「太商業」，「唔要豪門財閥」係我個人 translate（見
+// 全部限制規則來源文檔）。2026-08-19 再澄清：商戰／豪門依然禁，但職場個人鬥爭（被搶
+// 功勞、被誣陷、被逼頂罪）已經開放。下面 10 個 Hook 嘅「高風險籌碼」用個人向
+// （手術費／官司／名聲／債／身份／同命契／職場處境），唔用集團股權嗰套。
+// ================================================================================
+
+type HookKey =
+  | "deadline_choice"
+  | "info_asymmetry"
+  | "stakes_deal"
+  | "mutual_hunt"
+  | "moral_regret"
+  | "wrong_identity"
+  | "pretend_amnesia"
+  | "social_humiliation"
+  | "debt_collateral"
+  | "shared_fate";
+
+type HookEngine = {
+  key: HookKey;
+  name: string;
+  driver: string; // 核心驅動力
+  seed: string; // 示範 premise，界定張力水平（模型要寫到呢個強度，但唔可以照抄）
+  genres: string[];
+};
+
+// 10 大爆款 Hook 引擎池。每次生成隨機抽一個，先寫 100 字內嘅極端衝突 premise，
+// 過咗張力審查先展開全文。seed 係「張力標尺」唔係範本，prompt 會明確叫模型唔好照抄。
+const HOOK_ENGINES: HookEngine[] = [
+  {
+    key: "deadline_choice",
+    name: "倒數死線 + 兩難抉擇",
+    driver: "時間壓迫到極限，兩個選擇都要付出慘痛代價",
+    seed: "距離妹妹上手術檯只剩兩個鐘，蘇念要喺「跪低求返當年退婚嗰個人」同「交出足以毀掉亡母名聲嘅證據」之間揀一樣。就喺佢舉起筆嗰刻，對方將張支票撕成兩半：「我要嘅唔係你嘅簽名。」",
+    genres: ["家族發瘋", "退婚逆襲"],
+  },
+  {
+    key: "info_asymmetry",
+    name: "資訊差 + 誘敵深入",
+    driver: "一方以為自己完全佔上風，其實由頭到尾都喺對方掌握之中",
+    seed: "陸行舟以為佢用一紙協議困住咗江晚，報返當年被退婚嗰浸氣。佢唔知江晚手上有段錄音，一放出嚟成頭家都散。佢心甘情願留喺佢身邊，只係為咗等佢親口講出嗰句話。",
+    genres: ["復仇歸來", "身份反轉"],
+  },
+  {
+    key: "stakes_deal",
+    name: "條款陷阱 + 致命驚喜",
+    driver: "為救人簽落一份表面荒謬嘅約，簽完先發現條款背後藏住恐怖真相",
+    seed: "為咗湊夠爸爸嘅醫藥費，林微答應扮演傅景琛亡妻嘅替身三個月。簽約第一晚，傅景琛帶佢去墓地——墓碑上面嗰張相，係林微自己。",
+    genres: ["契約婚姻", "假戲真做"],
+  },
+  {
+    key: "mutual_hunt",
+    name: "雙向互獵 + 強強試探",
+    driver: "兩個勢均力敵嘅對手被逼入同一個絕境，只有一個可以贏",
+    seed: "兩個追查同一單案嘅死對頭被困喺同一間密室，得一個人可以攞到出口密碼。互相落死手嗰陣，兩人同時發現對方袋入面，係同一枚五年前救過自己嘅襟章。",
+    genres: ["強強交鋒"],
+  },
+  {
+    key: "moral_regret",
+    name: "遲到真相 + 極致追悔",
+    driver: "親手摧毀咗對方之後，先發現對方一直係默默救自己嗰個",
+    seed: "顧言深當眾燒毀咗江離嘅畫室，笑佢一世都係個攀附者。直到江離簽咗離婚協議走人，佢先喺灰燼下面搵到嗰張救返佢阿媽一命嘅匿名捐贈同意書——落款係江離。",
+    genres: ["求而不得", "復仇歸來"],
+  },
+  {
+    key: "wrong_identity",
+    name: "錯位替身 + 即時拆穿",
+    driver: "頂替身份第一秒就被最唔應該識穿嗰個人識穿",
+    seed: "頂替失蹤嘅孖生家姐出席死對頭嘅晚宴，第一晚就俾對方堵喺角落：「你扮得比你家姐好。不過你家姐唔會用左手攞酒杯。」",
+    genres: ["雙胞胎替身局", "身份反轉"],
+  },
+  {
+    key: "pretend_amnesia",
+    name: "偽裝失憶 + 危險重逢",
+    driver: "扮唔認得對方，但身體同細節出賣咗一切",
+    seed: "離婚三年後喺急症室重逢，佢扮唔認得，問「請問你係邊位」。佢一路幫佢止血一路冷笑：「唔記得我，都應該記得你手上呢隻戒指刻咗咩字。」",
+    genres: ["復仇歸來", "求而不得"],
+  },
+  {
+    key: "social_humiliation",
+    name: "社交撕裂 + 極限翻盤",
+    driver: "喺最多人嘅場合被公開羞辱，下一秒身份反轉全場跪低",
+    seed: "喺百人謝師宴上面，前男友用投影片公開佢當年窮到要做三份兼職嘅相。下一秒，全場最德高望重嗰位教授行埋嚟，當住所有人叫佢一聲「老師」。",
+    genres: ["潛入打臉", "退婚逆襲"],
+  },
+  {
+    key: "debt_collateral",
+    name: "抵押清算 + 惡劣籌碼",
+    driver: "去追討／清算嘅時候，發現對方將自己都抵押埋落張單度",
+    seed: "佢被派去處理亡父留低嘅爛債，第一日就發現：仇家將自己名下所有嘢，連埋佢自己，一次過抵押咗俾佢。「而家我係你嘅資產，你想點處置我？」",
+    genres: ["強強交鋒", "契約婚姻"],
+  },
+  {
+    key: "shared_fate",
+    name: "同生共死 + 命運綁定",
+    driver: "想落手殺對方嗰刻，先發現傷佢等於傷自己",
+    seed: "佢接到指令去接近宿敵，落手嗰刻先發現兩家人早就簽落一份同命契——對方受傷，自己會同步流血。佢一刀落去，兩個人一齊跪低。",
+    genres: ["雙向救贖", "身份反轉"],
+  },
 ];
 
-// 2026-08-13：原本8個非財富向設定入面4個都用「深藏/隱藏/扮」開首，讀落好單一（Stephanie 反饋人設扁平），
-// 呢次重寫做唔同句式開首，保留反差張力但表達方式唔再撞句式
-const HERO_IDENTITIES = [
-  "傳說中冷面到犯法嘅上司", "變咗樣嘅青梅竹馬", "全城最難惹嘅人",
-  "人人畏懼嘅冷面判官型人物", "曾經被拒絕現在身份反轉嘅舊識", "表面獨寵秘書實際另有目的嘅上司",
-  // 2026-08-03：豪門財閥向 slot 應要求剔走（讀落太商業），換做非財富向嘅身份反差設定
-  "退役特種兵，如今低調做保安主管", "履歷普通嘅新同事，其實係金牌外科醫生",
-  "得獎作家/導演，用筆名匿名生活", "武術冠軍，退役後開咗間唔起眼嘅拳館",
-  "王牌臥底特工，任務期間扮做普通職員", "過氣明星，息影多年獨自搬嚟呢個社區",
-  "急救醫生/消防員，平時擺出一副拒人千里嘅樣", "米芝蓮主廚，卻情願喺街市大排檔掌廚",
-];
-
-const TRIGGER_EVENTS = [
-  "相親坐錯桌", "應徵做臨時女友/司機/秘書", "醉酒簽咗份合約", "被抓包假扮身份",
-  "閨蜜託付潛入搞破壞", "被公司隨機抽中做測試對象", "婚禮/酒會上被錯認",
-  "穿書穿成即將被休嘅女配", "被抓去頂替相睇對象出席飯局", "因一場意外車禍/受傷被誤認做另一個人",
-  "被指派做「假想夫妻」拍宣傳照/應付家族聚會", "意外撿到對方遺失嘅重要物品搭上線",
-  "被塞去做臨時保姆/管家應急", "應徵演員/替身工作意外撞正真人",
-];
-
-const MIDPOINT_TWISTS = [
-  "對方一早知道你身份卻配合演戲", "你意外掌握對方把柄反將一軍", "你隨口一句話拆穿對方精心設計嘅局",
-  "你嘅「缺點」竟然正中對方心意", "對方默默做過嘅隱藏善舉被揭穿", "你哋雙方原來各自都有秘密任務，撞埋一齊",
-  "對方其實一直保護緊你唔知道嘅過去", "你隨手嘅一個決定意外救咗對方一命/一局",
-  "你被誤會嘅「壞名聲」原來係對方刻意保護你嘅結果", "你發現眼前人竟然係當年幫過你嘅陌生人",
-  "對方主動送上把柄考驗你嘅選擇", "一場意外揭發第三者才是真正嘅幕後黑手",
-  "你以為輸咗嘅籌碼原來一早已經贏定", "對方遞出嘅條件背後藏住一份唔敢講出口嘅心意",
-];
-
-// ---------- 骨架 B：契約婚姻／先婚後愛（2026-08-13 新增，冇隱藏身份，張力嚟自假關係變真感情）----------
-const CONTRACT_REASONS = [
-  "家族逼婚需要一個擋箭牌", "遺產繼承條件要求已經結婚", "簽證/居留身份出現危機",
-  "幫朋友撐場臨時扮情侶", "醫院緊急聯絡人一欄要已婚先可以簽字", "海外進修/移民審查要求已婚身份",
-  "為咗爭撫養權要證明關係穩定", "還債換取棲身之所嘅交換條件",
-];
-
-const CONTRACT_SPARKS = [
-  "對方喺外人面前撐你撐到過晒火", "同居意外揭發對方不為人知嘅溫柔一面", "一場危機入面對方本能咁保護你",
-  "對方喺你唔為意時默默記低你嘅生活習慣", "合約快到期，對方主動提出續約嘅理由講唔出口",
-  "第三者出現，對方吃醋反應出賣咗自己", "一次假裝親密嘅動作，換嚟一個唔似係演戲嘅心跳",
-];
-
-// ---------- 骨架 C：雙強對峙（2026-08-13 新增，男女主都唔弱，冇身份要隱藏，張力嚟自對等較量）----------
-// ⚠️ 揀嘅場景刻意避開商業/職場鬥爭（撞返 STYLE_2026 嘅禁區），淨用技藝/體能/司法呢類對等較量
-const CLASH_ARENAS = [
-  "格鬥/健身擂台上嘅勁敵", "法庭上嘅控辯雙方律師", "同一件藏品嘅競投對手",
-  "廚藝比賽嘅決賽對手", "同一單案件嘅刑警與私家偵探", "同一個賽道嘅賽車/馬拉松對手",
-  "音樂/舞蹈大賽嘅決賽對手",
-];
-
-const CLASH_TURNS = [
-  "發現有共同敵人要暫時合作", "對方意外救咗你一命令形勢逆轉", "上級/評審要求你哋合作而唔係對戰",
-  "一場意外令你哋要共享一個空間/資源", "對方唔按套路出牌打亂你部署，反而引起你興趣",
-  "你哋各自嘅底牌被同一件事同時揭穿",
-];
-
-// ---------- 骨架 D：雙向救贖／虐戀治癒（2026-08-18 新增，兩個各自帶傷嘅人喺相處中治癒對方，
-// 唔靠身份反差/揭穿/較量，張力嚟自「表面想要 vs 真正怕」嘅內在矛盾撞埋一齊。來源：2026 短劇市場《那年冬至》
-// 《老板他暗恋我》兩類「雙向救贖/虐戀治癒」爆款，Stephanie 確認加。）----------
-const HEALING_WOUNDS = [
-  "曾經因為信錯人而傾家蕩產，從此唔敢再信任何人",
-  "細個俾父母忽略，一直用死命工作證明自己值得被愛",
-  "上一段感情因為自己嘅懦弱錯過咗，一直悔恨",
-  "照顧患病嘅家人好多年，忘記咗點樣為自己而活",
-  "曾經嘅夢想俾現實磨滅，而家得返個「過日子」",
-  "細個經歷父母離婚，一直唔相信關係可以長久",
-  "工作上一次重大失誤累到人受傷，一直活喺自責入面",
-  "曾經係人群焦點，而家因為一件事跌落谷底，唔敢再面對人",
-];
-
-const HEALING_TRIGGERS = [
-  "喺對方防備最低嗰一刻，撞見咗佢平時唔會俾人睇到嘅一面",
-  "無意中講出一句戳中對方心事嘅說話，發現對方反應異常",
-  "一件本身平常嘅小事，觸發咗對方壓抑好耐嘅情緒",
-  "陪對方行返一次佢一直逃避嘅地方",
-  "對方喺你面前第一次流露脆弱，冇再扮冇事",
-  "發現大家因為各自嘅傷口，都做過同一種選擇",
-];
-
-// ---------- 骨架選擇（帶權重。2026-08-18：由 5:3:2 調做 4:3:2:3，降低 identity_reveal 佔比
-// （原本一半故事都行呢條線，係「篇篇都似」嘅主因之一），四個骨架分佈更平均）----------
-type Skeleton = "identity_reveal" | "contract_marriage" | "power_clash" | "mutual_healing";
-const SKELETON_WEIGHTS: { key: Skeleton; weight: number }[] = [
-  { key: "identity_reveal", weight: 4 },
-  { key: "contract_marriage", weight: 3 },
-  { key: "power_clash", weight: 2 },
-  { key: "mutual_healing", weight: 3 },
-];
-
-function pickSkeleton(exclude: Set<Skeleton>): Skeleton {
-  const pool = SKELETON_WEIGHTS.filter((s) => !exclude.has(s.key));
-  const src = pool.length > 0 ? pool : SKELETON_WEIGHTS;
-  const total = src.reduce((sum, s) => sum + s.weight, 0);
-  let r = Math.random() * total;
-  for (const s of src) {
-    if (r < s.weight) return s.key;
-    r -= s.weight;
-  }
-  return src[src.length - 1].key;
+function pickHook(exclude: Set<HookKey>): HookEngine {
+  const pool = HOOK_ENGINES.filter((h) => !exclude.has(h.key));
+  const src = pool.length > 0 ? pool : HOOK_ENGINES;
+  return src[Math.floor(Math.random() * src.length)];
 }
 
-// 前台篩選用嘅粗分類標籤，按骨架分池，令 genre tag 同故事實際內容對得上
-// ⚠️ 雙胞胎替身局／復仇歸來 兩個係研究到而未同 Stephanie 落實確認，暫列入池，如反對可刪走
-// ⚠️「雙強對峙」呢個名已經俾 genreCategories.ts 攞咗做古言宮廷（period-drama）大類用，
-// 呢度嘅雙強對峙骨架係現代設定，改用「強強交鋒」呢個新名避免撞名累到前台分錯大類。
-const GENRE_TAGS_BY_SKELETON: Record<Skeleton, string[]> = {
-  identity_reveal: [
-    "潛入打臉", "穿書自救", "甜寵反轉", "退婚逆襲", "假戲真做",
-    "身份反轉", "家族發瘋", "求而不得", "雙胞胎替身局", "復仇歸來",
-  ],
-  contract_marriage: ["契約婚姻", "假戲真做"],
-  power_clash: ["強強交鋒"],
-  mutual_healing: ["雙向救贖", "治癒系"], // 2026-08-18 新增，genreCategories.ts 已歸落 revenge-romance（虐戀屬性相近）
-};
+// 2026-08-19 次輪實測補鑊：premise prompt 原本喺要求入面直接列「親人的手術」做第一個例子，
+// 結果連續兩篇 premise 都揀咗「媽媽手術費」做籌碼——即係 slot 化嘅老問題喺新架構重現。
+// 改做獨立抽籤 + 記入 gen_meta 做近期排除，逼籌碼真正輪流轉。
+const STAKE_TYPES = [
+  "一場輸了就要坐牢的官司",
+  "一個一旦傳開就會毀掉整個人生的謠言",
+  "一筆到期還不出、追債的人已經上門的錢",
+  "一個一旦被揭穿就身敗名裂的身份秘密",
+  "一份能證明自己清白的關鍵證詞",
+  "一個孩子的撫養權",
+  "一間承載全部回憶、明天就要被收走的老房子",
+  "一個苦讀多年、明天放榜就會被取消的資格",
+  "一份簽了就再也拿不回來的授權書",
+  "一個唯一肯替自己作證的人，正準備反口",
+  "一份足以推翻當年冤案的舊紀錄",
+  "一次錯過就再沒有第二次的救命名額",
+  // 2026-08-19 Stephanie 澄清職場鬥爭 OK 之後加（商戰仍然禁）——籌碼停留喺「人對人」層面
+  "一個被同事當眾搶走、再也拿不回來的功勞",
+  "一份被人動過手腳、足以令自己即刻被解僱的紀錄",
+];
 
 const SURNAMES = ["沈", "陸", "江", "顧", "蘇", "林", "周", "程", "宋", "謝", "封", "傅", "聞", "盛", "時", "樓", "席", "慕", "厲", "荀", "崔", "裴"];
 const FEMALE_GIVEN = ["知微", "知意", "薏", "清昭", "念安", "疏影", "望舒", "宛卿", "憶蘿", "簡遙", "南星", "如晚", "青禾", "思螢", "蘇黎"];
 const MALE_GIVEN = ["沉硏", "臨渊", "行舟", "景琛", "亦臻", "聞禮", "執", "衍之", "聲遠", "承宴", "修白", "緘言"];
 
-// ---------- House Style（2026-08-18 精簡版：由十幾條清單式規則收做5條創作原則
-// ——起因：Stephanie 反饋清單式規則令模型「逐條打勾」，寫出嚟係「達標文」唔係「作品」，
-// 舊規則太多互相衝突（例如「每400字一個反轉」同「慢熱鋪陳先打動人」正面撞），
-// 改用有層次嘅創作原則代替。詳細決策脈絡 → daily-novel CHANGELOG.md 2026-08-18）----------
-const STYLE_2026 = `
-【必須使用繁體字（Traditional Chinese），絕對唔可以出現簡體字（Simplified Chinese），呢個規定優先過任何其他規則】
+// ---------- House Style（2026-08-19 大改：由「純文學向創作原則」整套換做「2026 短劇爽文法則」
+// ——起因：舊版六條原則（一場一景／信任讀者／意象貫穿／克制留白）係純文學美學，實測連人手
+// 精寫嘅樣本 Stephanie 都評「一樣悶」。市場數據：每分鐘要 3-4 個情緒爆點、讀者 3 秒決定去留、
+// 打臉逆襲轉化率係純愛情向 2.3 倍、純愛情向內容 2026 年已現觀眾疲勞。
+// ⚠️ 呢份 prompt 刻意用書面中文寫指令（唔再用粵語落指令）——舊版粵語指令令模型跟錯 register，
+// 成日輸出粵語口語詞觸發 validate retry。詳細決策脈絡 → daily-novel CHANGELOG.md 2026-08-19）----------
+const STYLE_2026_SHUANGWEN = `
+【必須使用繁體字（Traditional Chinese），絕對不可以出現簡體字（Simplified Chinese），這條規定優先於任何其他規則】
 ${LANG_RULE}
 
-【六條創作原則（2026-08-19 修訂，加崩防位）】
-1. 具體壓倒抽象：全篇每個關鍵情緒/轉折位，一定要用一個具體到得返一次嘅細節（一個動作、一件物件、一句原話）嚟寫，唔可以用形容詞概括代替（唔准寫「佢很紳士」，要寫「佢幫你開門嗰陣，手指尾勾住門框」呢類具體畫面）。
-2. 一場一景，唔准總結跳接：全篇淨可以有 1-2 個實際發生緊嘅場景，唔可以用「幾日後」「漸漸地」「相處左一段時間」呢類詞跳接時間，情感轉變一定要喺場景入面用一個具體時刻完成。開場即入場景（第一句就係現場嘅動作/對白/具體畫面），唔准用背景介紹起筆。
-3. 表面想要 vs 真正怕：女主男主各自要有一個「表面想要嘅嘢」同一個「真正怕嘅嘢」，兩個要有矛盾——故事嘅張力嚟自呢個內在矛盾，唔淨係嚟自外部事件（相親/契約/對峙）。
-4. 信任讀者：寫完一個動作或者對白之後，唔准即刻補一句解釋角色點解咁做/佢而家嘅心情——留返俾讀者自己睇得出。
-5. 一個貫穿全篇嘅意象：開場揀一件具體物件或者細節，全篇最少出現三次，最後一次出現要帶住新意義（同開場嗰次唔一樣嘅感覺），令結尾可以扣返轉頭。
-6. 一定要有崩防位：全篇最少一個位，主角原本壓住嘅情緒/防備要徹底崩潰一次——用具體反應寫出嚟（喊出聲、聲音變、手震），唔可以由頭到尾都係「忍住」「沒說話」帶過，冇宣洩位嘅故事唔算完整。
+【2026 高情緒密度爽文／短劇創作法則】
+你不是純文學作家。你是 2026 年爆款短劇與熱門網文的主筆。你唯一的目標是：讓讀者在前三秒被鉤住，在過程中感受極致的情緒壓迫，最後獲得徹底的翻盤爽感。
 
-【底線技術要求（唔可以違反）】
-- 女主/主角要「發瘋、反套路、夠飒」——用擺爛、將計就計、發瘋輸出等手段自救，唔靠傳統隱忍、哭泣、等人拯救。
-- 深情要用主動付出、共同經歷嘅具體時刻嚟表現，唔可以寫成「長期記錄/監視對方一舉一動」（例如寫本子記低對方習慣、偷偷觀察好耐）——呢類寫法讀落有跟蹤狂感，唔係浪漫。
-- 標題禁止「XX的YY」「XX之YY」呢類公式化句式。
-- 絕對唔可以出現：商戰/職場鬥爭、鬼怪/靈異/恐怖元素。
+1. 開場即爆點（前 100 字）
+   第一句必須直接進入極端衝突、羞辱、絕境或命運抉擇的現場。嚴禁任何背景介紹、環境描寫、天氣描寫、人物履歷交代。讀者看第一行就要知道「有大件事正在發生」。
 
-【共鳴／落淚硬規（2026-08-13）】
-- 故事核心情感要揀普通人親身經歷過嘅心理狀態（錯過、後悔、唔敢講出口、犧牲、被忽略），唔可以淨係靠身份反差/打臉嘅爽感撐全場。
-- 全篇最後一句要寫到可以獨立截圖、唔使前文都睇得明、想令人分享出去嘅程度。
+2. 高風險籌碼（Stakes）
+   主角必須有一樣「輸咗就完蛋」的具體東西壓在檯面上——親人的手術、一場官司、一個名聲、一筆還不起的債、一個身份秘密。抽象的「內心創傷」不算籌碼。讀者要清楚知道：如果主角輸，會即刻失去甚麼。
 
-【揭露機制硬規（2026-08-13，2026-08-18 加第4選項）】
-- 秘密／身份反差／心事點樣被發現，唔准用「翻舊物／搵到證物／解鎖舊裝置／偷睇日記」呢類方式——呢類寫法要解釋一大堆「點解物件會留喺度」「點解事隔幾年先發現」，愈解釋愈假，讀者一睇就出戲。
-- 一律用以下其中一種：①即時撞破（當場撞見對方正在做緊嗰件事）②第三者當場講漏嘴（唔知情嘅旁人講出真相）③直接對峙（一方主動攤牌講出嚟）④心聲/內心話唔小心被聽到或者講咗出嚟。
+3. 情緒曲線：壓迫 → 反轉 → 打臉 → 宣洩（全篇至少 3 個情緒爆點）
+   完整曲線必須是：①主角被壓迫／被質疑／被羞辱到極點 → ②第一層反轉（對手以為贏定）→ ③關鍵籌碼亮出／真身份浮現 → ④徹底打臉，情緒完全宣洩。
+   每個反轉之前必須埋一個一句話的伏筆，不可以憑空掉下來。
 
-※ 標題另外由generateTitle()獨立生成（2026-08-19），呢度唔使理標題，淨係專注寫內容。
+4. 對白要有鋒芒
+   對白必須短、狠、帶張力，敵意與深情要形成反差。嚴禁無意義的日常閒聊（問天氣、修燈泡、遞水、澆花、餵鴿子這一類）。每一句對白都要推進衝突或翻轉關係。
+
+5. 節奏：不准溫吞
+   情節必須持續推進，禁止用大段內心獨白、回憶、景物描寫拖慢節奏。角色的心理狀態要用行動和對白表現，不要用一整段去解釋。
+
+6. 鉤子句結尾
+   short（短篇）：在打臉或情感爆發的最頂峰戛然而止，最後一句要是有傳播力的金句。
+   serial（連載）：停在身份即將揭穿／關鍵抉擇落地的前一秒。
+
+7. 女主要夠飒（2026-08-19 加返）
+   女主／主角必須「發瘋、反套路、夠飒」——用擺爛、將計就計、當場拆穿、發瘋輸出等手段自救，
+   不可以靠傳統的隱忍、哭泣、等人來拯救。她可以哭，但哭完一定要自己出手翻盤，不是等男主救。
+
+8. 情感要有共鳴底（2026-08-19 加返，作為第6條金句規則嘅輔助條件）
+   主角嘅核心情緒盡量揀普通人親身經歷過嘅心理狀態做底色——錯過、後悔、唔敢講出口、犧牲、被忽略、
+   被信任嘅人背叛。呢個唔係要放慢節奏或加內心獨白，而係令翻盤打臉嗰刻嘅「爽」有真實情緒撐住，
+   唔係得個爽字得個殼。
+
+【絕對禁忌】
+- 嚴禁靜物文青風：不要專注描寫花草、石頭、鴿子、薄荷、路燈、光影這一類意象，更不要讓某件靜物貫穿全篇當主角。
+- 嚴禁寫成無衝突的同居日常、合租日常、慢熱相處。
+- 嚴禁「兩個受傷的人在室內平靜地互相理解」這種零外部衝突的寫法。
+- 嚴禁商戰情節：企業收購、股權爭奪、集團鬥爭、董事會奪權、公司估值談判這一類，一律不准寫。
+  但「職場上的個人衝突」可以寫，而且鼓勵：被上司針對、被同事搶功、被誣陷偷資料、被排擠、被逼頂罪、升遷被人做手腳。
+  分界線：衝突發生在「人與人之間」可以；變成「公司與公司之間的生意攻防」就不行。
+- 嚴禁鬼怪／靈異／恐怖元素。
+- 嚴禁把深情寫成長期監視、偷偷記錄對方一舉一動（讀起來像跟蹤狂，不是浪漫）。
+- 嚴禁豪門、財閥、總裁、繼承人、家族聯姻這類設定。主角是普通人，籌碼要是普通人有共鳴的東西。
+- 嚴禁用獵奇題材製造衝擊：不可以出現代孕、懷孕測試、墮胎、亂倫或兄妹戀暗示、未成年情節、性交易。
+  張力必須來自處境壓迫與抉擇，不是來自禁忌題材本身。
+- 男女主必須是可以發展感情關係的對等成年人。嚴禁把兩人寫成父女、母子、兄妹、姊弟或任何血緣親屬關係。
+
+【揭露機制硬規】
+秘密／身份／真相被發現的方式，不可以用「翻舊物、搜到證物、解鎖舊裝置、偷看日記」這一類（要解釋太多巧合，讀者一看就出戲）。
+必須用以下其中一種：①即時撞破（當場撞見）②第三者當場講漏嘴 ③直接對峙攤牌 ④心聲／內心話不小心被聽見。
+
+※ 標題由獨立程序生成，這裡不需要處理標題，專注寫正文。
 `;
 
 const SERIAL_STRUCTURE = `
-【serial（連載，有互動結局功能）結構規定】字數 2200–8000字。
-結尾唔淨係留鉤，仲要停喺一個具體嘅「抉擇/未揭曉節點」——例如對方即將講出關鍵答案嘅前一秒、
-女主即將做一個攸關命運嘅選擇、秘密即將揭穿嘅前一刻、表白/肢體接觸嘅前一刻。
-呢個節點要令讀者諗到至少兩種截然不同嘅後續發展方向（例如：佢會唔會揭穿我？定係會唔會原諒我？），
-先啱後續互動結局分支發揮。純粹斬喺動作描寫中間、冇分支想像空間嘅停法，唔算合格。唔可以寫成大團圓結局。
-秘密/身份反差嘅揭露跟返「揭露機制硬規」（即時撞破/第三者講漏嘴/直接對峙），停喺揭露前一秒最啱做呢個節點。
+【serial（連載，有互動結局功能）結構規定】
+⚠️ 字數硬性下限 2200 字，目標 2800–4500 字。少於 2200 字一律不合格會被打回重寫，所以必須寫足。
+如果覺得情節不夠長，就多加一層衝突或多寫一個爆點場面，不要草草收尾。
+節奏要求：全篇至少 3 個情緒爆點，平均每 600-800 字就要有一次翻轉、揭穿或形勢逆轉。不可以連續兩大段沒有衝突推進。
+結尾必須停在一個具體的「抉擇／未揭曉節點」——對方即將講出關鍵答案的前一秒、主角即將做出攸關命運的選擇、
+秘密即將揭穿的前一刻、關鍵籌碼即將亮出的前一刻。
+這個節點要令讀者能想到至少兩種截然不同的後續發展（例如：他會不會揭穿我？他會不會原諒我？），才適合後續互動結局分支。
+單純斬在動作描寫中間、沒有分支想像空間的停法，不算合格。不可以寫成大團圓結局。
 `;
 
 const SHORT_STRUCTURE = `
-【short（短篇，冇互動結局功能）結構規定】字數 1500–3000字。
-結尾必須完整收尾，有明確情感爆發點/會心一笑/淚點，絕對唔可以留任何懸念或開放式結局。
-容許寫成「求而不得」「暗戀落空」呢類令人想喊嘅淚點向結局，唔一定要 happy ending，
-但無論結局係甜係苦，情節本身一定要完整解決，唔可以留手尾。
-情感高潮跟返「共鳴／落淚硬規」——唔准直接講情緒，最後一句一定要係可以獨立截圖引用嘅句子。
+【short（短篇，沒有互動結局功能）結構規定】字數 1500–3000字。
+節奏要求：全篇至少 3 個情緒爆點，平均每 500-700 字就要有一次翻轉、揭穿或形勢逆轉。
+結尾必須完整收尾：衝突要有結果，籌碼要落地，打臉或情感宣洩必須完成，絕對不可以留懸念或開放式結局。
+容許苦結局（求而不得、遲來的真相），不一定要 happy ending，但情節本身一定要解決，不可以留手尾。
+最後一句必須是可以獨立截圖傳播的金句。
 `;
 
 const SIMPLIFIED_ONLY = [
@@ -212,6 +257,16 @@ const AI_CLICHES = [
 ];
 const TITLE_FORMULAIC = /^.{2,6}(的|之).{2,6}$/;
 
+// 2026-08-19：Stephanie 澄清「職場鬥爭 OK，商戰唔要」之後實測發現——單靠 prompt 擋唔住，
+// 模型會由「被同事搶功勞」自己升級去「總部收購目標」。所以加 code 層黑名單，
+// premise 同正文兩層都 check，撞到就重生成。
+// ⚠️ 揀詞準則：只收「公司對公司嘅生意攻防」用語，唔收「人對人嘅職場衝突」用語
+//（所以冇收「主管」「同事」「升職」「解僱」呢啲——嗰啲而家係容許嘅）。
+const BUSINESS_WAR_WORDS = [
+  "收購", "併購", "股權", "股份", "董事會", "上市", "估值", "融資",
+  "商戰", "競標", "併吞", "控股", "集團利益", "商業機密",
+];
+
 function pick<T>(arr: T[], exclude: Set<T> = new Set()): T {
   const pool = arr.filter((x) => !exclude.has(x));
   const src = pool.length > 0 ? pool : arr;
@@ -226,22 +281,19 @@ function pickName(recentSurnames: Set<string>, givenPool: string[]): string {
 
 type StoryType = "serial" | "short";
 
-// gen_meta：記低今次生成用咗邊個骨架+slot組合，插入DB留返俾下次生成排除近期用過嘅組合
-type GenMeta =
-  | { skeleton: "identity_reveal"; situation: string; identity: string; event: string; twist: string }
-  | { skeleton: "contract_marriage"; reason: string; spark: string }
-  | { skeleton: "power_clash"; arena: string; turn: string }
-  | { skeleton: "mutual_healing"; heroineWound: string; heroWound: string; trigger: string };
+// 2026-08-19：gen_meta 由「骨架+slot 組合」改記「Hook 引擎 + 實際生成嘅 premise」。
+// ⚠️ 舊資料（skeleton 形態）讀返出嚟 m.hook 會係 undefined，下面全部用 filter(Boolean) 擋住，
+// 唔會 crash，只係舊資料唔會參與排除計算——可以接受，因為舊故事本身就係要淘汰嗰批。
+type GenMeta = { hook: HookKey; stake: string; premise: string };
 
-// 攞返近期（同骨架先計）用過嘅某個slot欄位嘅值，做排除集合
-function recentSlotValues(metas: GenMeta[], skeleton: Skeleton, key: string, window = 8): Set<string> {
-  return new Set(
-    metas
-      .filter((m) => m.skeleton === skeleton)
-      .slice(0, window)
-      .map((m) => (m as unknown as Record<string, string>)[key])
-      .filter(Boolean)
-  );
+// 排除近期用過嘅 Hook 引擎（10 個引擎，排除最近 5 個 → 保證兩星期內唔會撞同一個 hook）
+function recentHooks(metas: GenMeta[], window = 5): Set<HookKey> {
+  return new Set(metas.slice(0, window).map((m) => m?.hook).filter(Boolean) as HookKey[]);
+}
+
+// 排除近期用過嘅籌碼類型（12 個，排除最近 6 個）
+function recentStakes(metas: GenMeta[], window = 6): Set<string> {
+  return new Set(metas.slice(0, window).map((m) => m?.stake).filter(Boolean) as string[]);
 }
 
 // 2026-08-19：validate 拆做content/title兩個函數，配合「先寫內容、後起標題」嘅兩次call設計
@@ -259,6 +311,9 @@ function validateContent(content: string, storyType: StoryType): string[] {
   }
   for (const c of AI_CLICHES) {
     if (content.includes(c)) fails.push(`AI陳套詞:${c}`);
+  }
+  for (const w of BUSINESS_WAR_WORDS) {
+    if (content.includes(w)) fails.push(`商戰詞:${w}`);
   }
   return fails;
 }
@@ -283,23 +338,33 @@ function validateTitle(title: string, recentTitles: string[]): string[] {
 // 唔會再出現「標題講咗個內文冇嘅戲劇化場面」嘅走數情況。
 async function generateTitle(content: string, recentTitles: string[]): Promise<string> {
   const systemMsg =
-    `你係專業網絡小說編輯，負責幫故事諗一個吸引嘅標題。\n` +
-    `【標題規則】\n` +
-    `- 標題一定要用全文入面真實出現過嘅具體畫面、對白或者情節嚟寫，唔可以作一個全文冇出現過嘅戲劇化場面。\n` +
-    `- 唔准用「XX的YY」「XX之YY」句式，要用場景/衝突/懸念感嚟寫，令人一睇就有畫面、想知後續。\n` +
-    `- 必須用繁體字，唔可以有簡體字或粵語口語詞（例如「嘅」「唔」「佢」「咗」「冇」）。\n` +
-    `淨係輸出標題本身，唔好加引號、解釋或者其他文字。`;
+    `你是 2026 年爆款短劇與網文的標題大師。請根據故事實際內容，想一個點擊率極高的標題。\n\n` +
+    `【標題三要點】\n` +
+    `1. 必須包含強烈衝突、極端反差或懸念對白。要讓人一看就想知道「到底發生甚麼事」。\n` +
+    `2. 標題提到的畫面或情節，必須是全文真實出現過的，不可以編造一個內文沒有的場面。\n` +
+    `3. 字數控制在 8-16 字。\n\n` +
+    `【句式參考（學結構，不要抄內容）】\n` +
+    `-「[極端動作]，[震撼反差結果]」例如：簽下離婚協議那夜，他砸了我的畫室\n` +
+    `-「[角色最有張力的一句對白]」例如：叫我一聲老公，這條命給你\n` +
+    `-「[身份錯位／秘密場面]」例如：替嫁當晚，被假瞎的他抓個正著\n\n` +
+    `【禁止】\n` +
+    `- 禁止「XX的YY」「XX之YY」這類老土句式。\n` +
+    `- 必須用繁體字，不可以有簡體字或粵語口語詞（例如「嘅」「唔」「佢」「咗」「冇」）。\n` +
+    // 2026-08-19 實測補鑊：出過「她媽的錄音帶，藏著他爸的命」——語意上係「她母親的錄音帶」，
+    // 但「她媽的」三個字連讀似粗口，做標題好易俾人誤讀。要明文避開。
+    `- 禁止出現會被誤讀成粗話的字組合（例如「她媽的」「他媽的」）。要提到母親一律寫「母親」或「媽媽留下的」，不要用「她媽的X」這種寫法。\n\n` +
+    `只輸出標題本身，不要加引號、解釋或其他文字。`;
   let userMsg =
-    `以下係故事全文，請根據呢個故事嘅實際內容諗一個標題：\n\n${content}\n\n` +
-    `近期已用標題（唔可以同呢啲重複或高度相似）：${recentTitles.join("、") || "無"}`;
+    `以下是故事全文，請根據這個故事的實際內容想一個標題：\n\n${content}\n\n` +
+    `近期已用標題（不可以與這些重複或高度相似）：${recentTitles.join("、") || "無"}`;
   let lastTitle = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     const raw = await deepseekChat(
       [
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      { model: "deepseek-chat", temperature: 1.0, maxTokens: 100, timeoutMs: 60_000 }
+      { model: "deepseek-chat", temperature: 0.95, maxTokens: 100, timeoutMs: 40_000 }
     );
     const title = raw.trim().replace(/^["「『]+|["」』]+$/g, "");
     lastTitle = title;
@@ -326,62 +391,95 @@ async function selfCheckClosure(content: string, storyType: StoryType): Promise<
   return raw.includes("合格") && !raw.includes("不合格");
 }
 
-function buildSkeletonPrompt(
-  skeleton: Skeleton,
-  recentMetas: GenMeta[]
-): { skeletonPrompt: string; genMeta: GenMeta; genrePool: string[] } {
-  if (skeleton === "identity_reveal") {
-    const situation = pick(HEROINE_SITUATIONS, recentSlotValues(recentMetas, skeleton, "situation"));
-    const identity = pick(HERO_IDENTITIES, recentSlotValues(recentMetas, skeleton, "identity"));
-    const event = pick(TRIGGER_EVENTS, recentSlotValues(recentMetas, skeleton, "event"));
-    const twist = pick(MIDPOINT_TWISTS, recentSlotValues(recentMetas, skeleton, "twist"));
-    return {
-      skeletonPrompt:
-        `骨架：身份反差揭穿。\n女主處境：${situation}\n男主/對手身份反差：${identity}\n相遇/觸發事件：${event}\n中段反轉/爽點：${twist}`,
-      genMeta: { skeleton, situation, identity, event, twist },
-      genrePool: GENRE_TAGS_BY_SKELETON.identity_reveal,
-    };
+// ================================================================================
+// Premise-First 第一階段：先生成一個 100 字內嘅極端衝突 premise，過咗張力審查先寫全文。
+// 呢個係今次大改嘅核心——舊系統直接由「骨架+slot」拼砌就寫全文，拼出嚟只係「設定」，
+// 冇「一句話講到你想睇落去」嘅衝突。分開兩階段之後，可以喺好平嘅成本下重試 premise，
+// 唔使成篇 3000 字寫完先發現個故事本身唔吸引。
+// ================================================================================
+async function generatePremise(
+  hook: HookEngine,
+  stake: string,
+  heroineName: string,
+  heroName: string,
+  recentPremises: string[]
+): Promise<string> {
+  const systemMsg =
+    `你是 2026 年爆款短劇的首席編劇。你的工作是想出一句話就能讓人想追下去的極端衝突開局。\n\n` +
+    `【要求】\n` +
+    `- 100 字以內，繁體中文，寫成一段連貫的敘述（不要分點、不要標題、不要解釋）。\n` +
+    `- 必須包含：①主角當下面對的極端困境或羞辱 ②今次指定的籌碼（見下）③一個立刻讓人意外的轉折或懸念。\n` +
+    `- 必須是「正在發生」的場面，不是背景設定。\n` +
+    // 2026-08-19 次輪實測補鑊：模型將男主寫成女主親生父親（「妳是我三年前弄丟的女兒」），
+    // 完全破壞言情關係。要明文鎖死男女主必須係可以發展感情嘅對等成年人。
+    `- 男主女主必須是可以發展感情關係的對等成年人。嚴禁把兩人寫成父女、母子、兄妹、姊弟或任何血緣親屬關係。\n` +
+    // 2026-08-19 Stephanie 澄清：職場鬥爭 OK，商戰唔要。原本兩樣綁埋一齊禁，而家拆開。
+    `- 嚴禁商戰：企業收購、股權爭奪、集團鬥爭、董事會奪權這一類不准寫。但職場上的個人衝突（被上司針對、被同事搶功、被誣陷、被逼頂罪）可以寫，而且鼓勵。\n` +
+    `- 嚴禁鬼怪靈異恐怖。籌碼要用個人向的東西。\n` +
+    `- 嚴禁寫成平靜的日常相處、合租同居、兩個人慢慢互相理解。\n` +
+    // 2026-08-19 首輪實測補鑊：新 prompt 一放開「極端衝突」，模型即刻衝去獵奇題材
+    // （代孕合約、驗孕棒、收養證明揭發兄妹關係）同埋返晒去豪門總裁設定——前者品味出事，
+    // 後者係 08-03 Stephanie 反饋「太商業」之後剔走嘅方向（註：佢原話只係「太商業」，
+    // 「唔要豪門財閥」係當時 implement 嘅方式，唔係佢落嘅硬規；08-19 已同佢澄清清楚）。
+    `- 嚴禁豪門、財閥、總裁、繼承人、家族聯姻這類設定。主角要係普通人，籌碼要係普通人有共鳴的東西。\n` +
+    `- 嚴禁用獵奇題材製造衝擊：不可以出現代孕、懷孕測試、墮胎、亂倫或兄妹戀暗示、未成年情節、性交易。\n` +
+    `  衝突必須來自「處境的壓迫」同「主角要做的選擇」，不是來自禁忌題材本身。\n\n` +
+    `【今次要用的 Hook 引擎】\n` +
+    `類型：${hook.name}\n核心驅動力：${hook.driver}\n\n` +
+    `【今次指定的籌碼（必須用這個，不可以換成別的，尤其不可以又寫成親人做手術籌醫藥費）】\n${stake}\n\n` +
+    `【張力標尺（示範這個強度，但嚴禁抄襲它的情節、職業、場景或對白）】\n${hook.seed}\n\n` +
+    `你必須寫一個跟示範完全不同的故事——不同的處境、不同的關係、不同的籌碼、不同的轉折。`;
+
+  const userMsg =
+    `女主姓名：${heroineName}，男主姓名：${heroName}。\n` +
+    (recentPremises.length
+      ? `\n【近期已經用過的開局，必須完全避開，不可以寫類似的情境】\n${recentPremises.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n`
+      : "") +
+    `\n只輸出 premise 本身，不要加任何前綴、引號或說明。`;
+
+  const raw = await deepseekChat(
+    [
+      { role: "system", content: systemMsg },
+      { role: "user", content: userMsg },
+    ],
+    { model: "deepseek-chat", temperature: 1.1, maxTokens: 300, timeoutMs: 45_000 }
+  );
+  return raw.trim().replace(/^["「『]+|["」』]+$/g, "");
+}
+
+// Premise 張力閘門：好平（maxTokens 30）嘅一次 call，攔住悶開局，唔使浪費成篇長文先發現唔掂。
+// fail-safe：judge 本身出錯就當 pass，唔可以因為個 judge 掛咗就成日冇故事生成。
+async function judgePremiseTension(premise: string): Promise<boolean> {
+  const prompt =
+    `以下是一個短劇故事的開局設定。請嚴格評估它是否達到 2026 年爆款短劇的標準。\n\n` +
+    `合格條件（必須全部滿足）：\n` +
+    `1. 有立即的、正在發生的高壓衝突（不是背景交代）\n` +
+    `2. 有明確而具體的籌碼（輸了會即刻失去某樣東西）\n` +
+    `3. 有讓人想知道「然後呢」的懸念或意外轉折\n\n` +
+    `開局：「${premise}」\n\n` +
+    `只輸出 JSON，不要其他文字：{"pass": true} 或 {"pass": false}`;
+  try {
+    const raw = await deepseekChat([{ role: "user", content: prompt }], {
+      model: "deepseek-chat",
+      temperature: 0,
+      maxTokens: 30,
+      timeoutMs: 20_000,
+    });
+    const m = raw.match(/\{[\s\S]*?\}/);
+    if (!m) return true;
+    const parsed = JSON.parse(m[0]) as { pass?: boolean };
+    return parsed.pass ?? true;
+  } catch {
+    return true; // fail-safe
   }
-  if (skeleton === "contract_marriage") {
-    const reason = pick(CONTRACT_REASONS, recentSlotValues(recentMetas, skeleton, "reason"));
-    const spark = pick(CONTRACT_SPARKS, recentSlotValues(recentMetas, skeleton, "spark"));
-    return {
-      skeletonPrompt:
-        `骨架：契約婚姻/先婚後愛。呢個骨架冇秘密身份要隱藏，張力嚟自「假關係變真感情」，唔准加入身份反差/臥底/隱藏才華嗰套。\n` +
-        `契約起因：${reason}\n弄假成真嘅觸發位：${spark}`,
-      genMeta: { skeleton, reason, spark },
-      genrePool: GENRE_TAGS_BY_SKELETON.contract_marriage,
-    };
-  }
-  if (skeleton === "power_clash") {
-    const arena = pick(CLASH_ARENAS, recentSlotValues(recentMetas, skeleton, "arena"));
-    const turn = pick(CLASH_TURNS, recentSlotValues(recentMetas, skeleton, "turn"));
-    return {
-      skeletonPrompt:
-        `骨架：雙強對峙。男女主雙方都要寫得同樣強、同樣有主見，唔准一方明顯強過另一方，冇秘密身份要隱藏，張力嚟自對等較量。\n` +
-        `較量場景：${arena}\n轉折位：${turn}`,
-      genMeta: { skeleton, arena, turn },
-      genrePool: GENRE_TAGS_BY_SKELETON.power_clash,
-    };
-  }
-  const heroineWound = pick(HEALING_WOUNDS, recentSlotValues(recentMetas, skeleton, "heroineWound"));
-  const heroWoundExclude = new Set([...recentSlotValues(recentMetas, skeleton, "heroWound"), heroineWound]);
-  const heroWound = pick(HEALING_WOUNDS, heroWoundExclude);
-  const trigger = pick(HEALING_TRIGGERS, recentSlotValues(recentMetas, skeleton, "trigger"));
-  return {
-    skeletonPrompt:
-      `骨架：雙向救贖/虐戀治癒。呢個骨架唔靠身份反差/揭穿/較量，張力嚟自兩個人各自帶嘅內在傷口——套用創作原則3（表面想要 vs 真正怕），兩人嘅傷口要喺相處入面慢慢浮現，唔可以一開波就攤晒出嚟。\n` +
-      `女主嘅傷口：${heroineWound}\n男主嘅傷口：${heroWound}\n觸發治癒嘅契機：${trigger}`,
-    genMeta: { skeleton, heroineWound, heroWound, trigger },
-    genrePool: GENRE_TAGS_BY_SKELETON.mutual_healing,
-  };
 }
 
 async function generateOne(
   storyType: StoryType,
   recentTitles: string[],
   recentSurnames: Set<string>,
-  recentMetas: GenMeta[]
+  recentMetas: GenMeta[],
+  forcedHook?: HookEngine
 ): Promise<{
   genre: string;
   title: string;
@@ -391,24 +489,55 @@ async function generateOne(
   validateNote: string;
   genMeta: GenMeta;
 }> {
-  const recentSkeletons = new Set(recentMetas.slice(0, 4).map((m) => m.skeleton));
-  const skeleton = pickSkeleton(recentSkeletons);
-  const { skeletonPrompt, genMeta, genrePool } = buildSkeletonPrompt(skeleton, recentMetas);
-  const genre = pick(genrePool);
+  const hook = forcedHook ?? pickHook(recentHooks(recentMetas));
+  const stake = pick(STAKE_TYPES, recentStakes(recentMetas));
+  const genre = pick(hook.genres);
 
   const heroineName = pickName(recentSurnames, FEMALE_GIVEN);
   const heroSurnameExclude = new Set([...recentSurnames, heroineName[0]]);
   const heroName = pickName(heroSurnameExclude, MALE_GIVEN);
 
+  // ---- 階段一：Premise（最多兩次，每次過張力閘門）----
+  const recentPremises = recentMetas
+    .map((m) => m?.premise)
+    .filter(Boolean)
+    .slice(0, 6) as string[];
+
+  let premise = "";
+  let premiseNote = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const p = await generatePremise(hook, stake, heroineName, heroName, recentPremises).catch(() => "");
+    if (!p) continue;
+    premise = p;
+    // 商戰詞喺 premise 層就要攔——如果留到正文層先攔，retry 會用返同一個 premise，
+    // 永遠改唔到（實測過：premise 講「總部收購目標」，正文一定會出「收購」）。
+    const bizHit = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
+    if (bizHit) {
+      premiseNote = `premise撞商戰詞(${bizHit})`;
+      continue;
+    }
+    const tensionOk = await judgePremiseTension(p);
+    if (tensionOk) {
+      premiseNote = attempt === 0 ? "premise一次過" : "premise重試1次";
+      break;
+    }
+    premiseNote = "premise張力不足(已用最後一次)";
+  }
+
+  const genMeta: GenMeta = { hook: hook.key, stake, premise };
+
+  // ---- 階段二：根據 premise 展開全文 ----
   const structure = storyType === "serial" ? SERIAL_STRUCTURE : SHORT_STRUCTURE;
-  const systemMsg = `${STYLE_2026}\n${structure}`;
+  const systemMsg = `${STYLE_2026_SHUANGWEN}\n${structure}`;
 
   const baseUserMsg =
-    `${skeletonPrompt}\n` +
-    `女主姓名：${heroineName}，男主姓名：${heroName}（可微調，但唔好改姓氏）。\n` +
-    `story_type：${storyType}。\n` +
-    `淨係寫全文內容，唔使諗標題（標題另外處理）。\n` +
-    `輸出格式必須係：\n===CONTENT===\n（全文）\n===END===\n唔好加任何其他文字或解釋。`;
+    `【故事開局（必須嚴格按這個開局展開，不可以改成另一個故事）】\n${premise}\n\n` +
+    `【Hook 類型】${hook.name}——${hook.driver}\n` +
+    `女主姓名：${heroineName}，男主姓名：${heroName}（名字可微調，但不要改姓氏）。\n` +
+    `story_type：${storyType}。\n\n` +
+    `請由這個開局的第一秒寫起（第一句就是現場，不要重新交代背景），寫成完整正文。\n` +
+    `只寫正文，不需要想標題（標題另外處理）。\n` +
+    `輸出格式必須是：\n===CONTENT===\n（全文）\n===END===\n不要加任何其他文字或解釋。`;
 
   let userMsg = baseUserMsg;
   let lastContent = "";
@@ -416,13 +545,15 @@ async function generateOne(
   let validateNote = "";
   let content = "";
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // 2026-08-19：retry 由 3 次收做 2 次（Gemini review 建議）——加咗 premise 階段之後
+  // 總 call 數上升，要留返 headroom 俾 Vercel 300 秒上限。
+  for (let attempt = 0; attempt < 2; attempt++) {
     const raw = await deepseekChat(
       [
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      { model: "deepseek-chat", temperature: 1.05, maxTokens: 6000, timeoutMs: 120_000 }
+      { model: "deepseek-chat", temperature: 1.05, maxTokens: 6000, timeoutMs: 110_000 }
     );
     content = (raw.split("===CONTENT===")[1]?.split("===END===")[0]?.trim()) || raw.trim();
     lastContent = content;
@@ -440,7 +571,7 @@ async function generateOne(
 
     retries = attempt + 1;
     validateNote = fails.join("；");
-    userMsg = `${baseUserMsg}\n\n⚠️重call:上一次唔合格，原因：${validateNote}。請修正返呢啲問題再寫一次。`;
+    userMsg = `${baseUserMsg}\n\n⚠️重寫：上一次不合格，原因：${validateNote}。請修正這些問題再寫一次。`;
   }
 
   const title = await generateTitle(content || lastContent, recentTitles);
@@ -451,7 +582,7 @@ async function generateOne(
     protagonist: `${heroineName}、${heroName}`,
     content: content || lastContent,
     retries,
-    validateNote: validateNote === "PASS" ? "PASS" : `⚠️未過validate：${validateNote}`,
+    validateNote: `${validateNote === "PASS" ? "PASS" : `⚠️未過validate：${validateNote}`}｜${premiseNote}`,
     genMeta,
   };
 }
@@ -481,33 +612,55 @@ export async function GET(req: NextRequest) {
     .map((r) => r.gen_meta as GenMeta | null)
     .filter((m): m is GenMeta => !!m);
 
+  // 2026-08-19：short / serial 由順序執行改做並行（Gemini review 建議）——加咗 premise
+  // 階段之後 call 數上升，並行可以將 wall-clock 由「兩篇相加」變成「較慢嗰篇」，
+  // 留返足夠 headroom 俾 Vercel 300 秒上限。
+  // ⚠️ 代價：兩篇唔會再互相排除標題/hook（原本順序跑會將前一篇 unshift 入 recentMetas）。
+  // 補償做法：預先幫兩篇各自 reserve 一個唔同嘅 hook，避免同一個 run 入面撞同一個 hook。
+  const reservedHooks = new Set(recentHooks(recentMetas));
+  const hookForShort = pickHook(reservedHooks);
+  reservedHooks.add(hookForShort.key);
+  const hookForSerial = pickHook(reservedHooks);
+
+  const settled = await Promise.allSettled(
+    ([
+      ["short", hookForShort],
+      ["serial", hookForSerial],
+    ] as [StoryType, HookEngine][]).map(([storyType, forcedHook]) =>
+      generateOne(storyType, recentTitles, recentSurnames, recentMetas, forcedHook).then(
+        (story) => ({ storyType, story })
+      )
+    )
+  );
+
   const results: Record<string, unknown>[] = [];
 
-  for (const storyType of ["short", "serial"] as StoryType[]) {
-    try {
-      const story = await generateOne(storyType, recentTitles, recentSurnames, recentMetas);
-      const { error } = await supabase.from("novel_stories").insert({
-        genre: story.genre,
-        title: story.title,
-        protagonist: story.protagonist,
-        content: story.content,
-        story_type: storyType,
-        gen_meta: story.genMeta,
-      });
+  for (const outcome of settled) {
+    if (outcome.status === "rejected") {
       results.push({
-        storyType,
-        title: story.title,
-        genre: story.genre,
-        skeleton: story.genMeta.skeleton,
-        retries: story.retries,
-        validateNote: story.validateNote,
-        insertError: error?.message ?? null,
+        error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason),
       });
-      recentTitles.push(story.title); // 避免同一個run入面兩篇撞標題
-      recentMetas.unshift(story.genMeta); // 避免同一個run入面兩篇撞骨架/slot
-    } catch (e) {
-      results.push({ storyType, error: e instanceof Error ? e.message : String(e) });
+      continue;
     }
+    const { storyType, story } = outcome.value;
+    const { error } = await supabase.from("novel_stories").insert({
+      genre: story.genre,
+      title: story.title,
+      protagonist: story.protagonist,
+      content: story.content,
+      story_type: storyType,
+      gen_meta: story.genMeta,
+    });
+    results.push({
+      storyType,
+      title: story.title,
+      genre: story.genre,
+      hook: story.genMeta.hook,
+      premise: story.genMeta.premise,
+      retries: story.retries,
+      validateNote: story.validateNote,
+      insertError: error?.message ?? null,
+    });
   }
 
   await supabase
