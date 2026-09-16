@@ -8,6 +8,20 @@ import { getGenreColor } from "@/lib/genreColor";
 
 export const revalidate = 0;
 
+// 判斷某個 created_at（UTC ISO string）係咪屬於「今日」嘅香港時間（cron 12:30 HKT 出街）
+function isTodayHKT(iso: string): boolean {
+  const HKT_OFFSET_MS = 8 * 60 * 60 * 1000;
+  const now = new Date();
+  const nowHkt = new Date(now.getTime() + HKT_OFFSET_MS);
+  const d = new Date(iso);
+  const dHkt = new Date(d.getTime() + HKT_OFFSET_MS);
+  return (
+    nowHkt.getUTCFullYear() === dHkt.getUTCFullYear() &&
+    nowHkt.getUTCMonth() === dHkt.getUTCMonth() &&
+    nowHkt.getUTCDate() === dHkt.getUTCDate()
+  );
+}
+
 export default async function HomePage() {
   const { supabase, user, likedIds } = await loadContext();
 
@@ -23,6 +37,7 @@ export default async function HomePage() {
     .select("id", { count: "exact", head: true });
 
   const list = stories ?? [];
+  const todayCount = list.filter((s) => isTodayHKT(s.created_at)).length;
 
   // 熱門題材（依故事數 top 8）
   const genreCounts = new Map<string, number>();
@@ -35,7 +50,7 @@ export default async function HomePage() {
   return (
     <>
       <BookEntrance />
-      <Hero loggedIn={!!user} storyCount={storyCount ?? 0} />
+      <Hero loggedIn={!!user} storyCount={storyCount ?? 0} todayCount={todayCount} />
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
         <RecommendedStories />

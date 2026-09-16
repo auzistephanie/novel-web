@@ -64,9 +64,11 @@ const COPY: Copy[] = [
 export default function Hero({
   loggedIn = false,
   storyCount = 0,
+  todayCount = 0,
 }: {
   loggedIn?: boolean;
   storyCount?: number;
+  todayCount?: number;
 }) {
   const copy = COPY[Math.floor(Math.random() * COPY.length)];
 
@@ -85,8 +87,14 @@ export default function Hero({
 
       <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-8 grid md:grid-cols-[1.1fr_.9fr] gap-8 items-center">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-brick bg-brick/10 px-3 py-1.5 rounded-full mb-5">
-            🔥 {copy.badge}
+          <div
+            className={`inline-flex items-center gap-2 text-xs font-bold tracking-wide px-3 py-1.5 rounded-full mb-5 ${
+              todayCount > 0 ? "text-brick bg-brick/10" : "text-ink/50 bg-ink/5"
+            }`}
+          >
+            {todayCount > 0
+              ? `🔥 今日已上架 ${todayCount} 篇新故事`
+              : "⏰ 今日新故事 12:30 出爐，未更新前先睇返舊故事"}
           </div>
           <h1 className="font-serif font-black text-3xl sm:text-4xl leading-tight mb-4">
             {copy.pre}
@@ -138,12 +146,12 @@ export default function Hero({
 
       <div className="flex gap-8 max-w-4xl mx-auto px-5 pb-2 flex-wrap">
         <div>
-          <b className="font-serif font-black text-2xl text-indigo block">25</b>
-          <span className="text-xs text-ink/50">加權題材池</span>
+          <b className="font-serif font-black text-2xl text-indigo block">10</b>
+          <span className="text-xs text-ink/50">爆款 Hook 引擎</span>
         </div>
         <div>
-          <b className="font-serif font-black text-2xl text-indigo block">2</b>
-          <span className="text-xs text-ink/50">每日更新批次</span>
+          <b className="font-serif font-black text-2xl text-indigo block">12:30</b>
+          <span className="text-xs text-ink/50">每日更新（HKT）</span>
         </div>
         <div>
           <b className="font-serif font-black text-2xl text-indigo block">{storyCount}</b>
