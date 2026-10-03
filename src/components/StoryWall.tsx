@@ -79,7 +79,7 @@ export default function StoryWall({
 
       {filtered.length === 0 && (
         <div className="border border-dashed border-ink/30 rounded-xl p-10 text-center text-ink/50">
-          呢個類別暫時未有故事，請留意下一批更新。
+          這個類別暫時沒有故事，請留意下一批更新。
         </div>
       )}
 

@@ -18,11 +18,11 @@ const COPY: Copy[] = [
     sub: "重生、逆襲、穿書、馬甲——踏進去，便是另一場人生。",
   },
   {
-    badge: "你選 · AI 為你續寫",
+    badge: "你選 · 為你續寫",
     pre: "誰說結局，不能",
     accent: "重寫",
     post: "？",
-    sub: "揀一個劇情走向，故事的收筆，交由你決定。",
+    sub: "選一個劇情走向，故事的收筆，交由你決定。",
   },
   {
     badge: "每日上新",
@@ -61,13 +61,12 @@ const COPY: Copy[] = [
   },
 ];
 
+// 2026-10-04：刪走 stats 行（「10 爆款 Hook 引擎」係內部 code 名、「已生成故事」暴露 AI 量產感）
 export default function Hero({
   loggedIn = false,
-  storyCount = 0,
   todayCount = 0,
 }: {
   loggedIn?: boolean;
-  storyCount?: number;
   todayCount?: number;
 }) {
   const copy = COPY[Math.floor(Math.random() * COPY.length)];
@@ -94,7 +93,7 @@ export default function Hero({
           >
             {todayCount > 0
               ? `🔥 今日已上架 ${todayCount} 篇新故事`
-              : "⏰ 今日新故事 12:30 出爐，未更新前先睇返舊故事"}
+              : "⏰ 今日新故事 12:30 上架，先看看往期精選"}
           </div>
           <h1 className="font-serif font-black text-3xl sm:text-4xl leading-tight mb-4">
             {copy.pre}
@@ -144,20 +143,6 @@ export default function Hero({
         </div>
       </div>
 
-      <div className="flex gap-8 max-w-4xl mx-auto px-5 pb-2 flex-wrap">
-        <div>
-          <b className="font-serif font-black text-2xl text-indigo block">10</b>
-          <span className="text-xs text-ink/50">爆款 Hook 引擎</span>
-        </div>
-        <div>
-          <b className="font-serif font-black text-2xl text-indigo block">12:30</b>
-          <span className="text-xs text-ink/50">每日更新（HKT）</span>
-        </div>
-        <div>
-          <b className="font-serif font-black text-2xl text-indigo block">{storyCount}</b>
-          <span className="text-xs text-ink/50">已生成故事</span>
-        </div>
-      </div>
     </section>
   );
 }

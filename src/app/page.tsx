@@ -32,10 +32,6 @@ export default async function HomePage() {
     .limit(60)
     .returns<Story[]>();
 
-  const { count: storyCount } = await supabase
-    .from("novel_stories")
-    .select("id", { count: "exact", head: true });
-
   const list = stories ?? [];
   const todayCount = list.filter((s) => isTodayHKT(s.created_at)).length;
 
@@ -50,7 +46,7 @@ export default async function HomePage() {
   return (
     <>
       <BookEntrance />
-      <Hero loggedIn={!!user} storyCount={storyCount ?? 0} todayCount={todayCount} />
+      <Hero loggedIn={!!user} todayCount={todayCount} />
 
       <main id="stories" className="flex-1 max-w-4xl w-full mx-auto px-5 py-10">
         <RecommendedStories />
@@ -65,7 +61,7 @@ export default async function HomePage() {
               短篇故事 →
             </h2>
             <p className="text-ink/60 text-sm">
-              有頭有尾、一次睇晒，已有結局，唔使追更。
+              有頭有尾，一次讀完，結局已寫好，無須追更。
             </p>
           </Link>
           <Link
@@ -77,7 +73,7 @@ export default async function HomePage() {
               互動結局 →
             </h2>
             <p className="text-ink/60 text-sm">
-              揀劇情走向，AI 即場為你寫下獨一無二嘅專屬結局。
+              由你選擇劇情走向，即時寫出獨一無二的專屬結局。
             </p>
           </Link>
         </section>
@@ -97,7 +93,7 @@ export default async function HomePage() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-serif font-black text-2xl">熱門題材</h2>
               <Link href="/categories" className="text-sm font-bold text-brick">
-                睇全部 →
+                查看全部 →
               </Link>
             </div>
             <div className="flex flex-wrap gap-2.5">

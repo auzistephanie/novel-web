@@ -57,7 +57,7 @@ export default function EndingFlow({
     return (
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <p className="text-sm text-ink/60">
-          登入後即可選擇劇情走向，讓 AI 為您生成專屬結局。
+          登入後即可選擇劇情走向，獲得您的專屬結局。
         </p>
         <Link
           href="/login"
@@ -105,7 +105,7 @@ export default function EndingFlow({
       {stage === "idle" && (
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <p className="text-sm text-ink/60">
-            由您決定劇情走向，AI 即時為您撰寫獨一無二的結局。
+            由您決定劇情走向，即時寫出獨一無二的結局。
           </p>
           <button
             type="button"
@@ -123,7 +123,7 @@ export default function EndingFlow({
           <p className="text-sm text-ink/60 animate-pulse">構思劇情分支中……</p>
           {slow && (
             <div className="mt-2 flex items-center gap-3">
-              <p className="text-xs text-ink/50">等咗有點耐，AI 可能忙緊。</p>
+              <p className="text-xs text-ink/50">等候時間較長，請稍候或重試。</p>
               <button
                 type="button"
                 onClick={startChoices}
@@ -173,7 +173,7 @@ export default function EndingFlow({
           </p>
           {slow && (
             <div className="mt-2 flex items-center gap-3">
-              <p className="text-xs text-ink/50">等咗有點耐，AI 可能忙緊。</p>
+              <p className="text-xs text-ink/50">等候時間較長，請稍候或重試。</p>
               <button
                 type="button"
                 onClick={() =>
@@ -200,11 +200,11 @@ export default function EndingFlow({
 
           <div className="mt-5 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-xs text-ink/50">
-              呢個結局已經存入你嘅
+              這個結局已存入你的
               <Link href="/my-endings" className="font-bold text-indigo hover:text-brick mx-1">
                 結局本
               </Link>
-              。想睇下揀第二個分支會點？
+              。想看看選另一個分支會怎樣？
             </p>
             <button
               type="button"

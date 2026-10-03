@@ -28,8 +28,8 @@ export default async function SerialPage({
         <h1 className="font-serif font-black text-3xl mb-1">互動結局</h1>
         <p className="text-ink/60">
           {user
-            ? "揀一個劇情走向，AI 即場為你寫下獨一無二嘅專屬結局，存入你的結局本。"
-            : "登入後即可揀劇情走向，讓 AI 為你生成專屬結局。"}
+            ? "選一個劇情走向，即時為你寫出獨一無二的專屬結局，並存入你的結局本。"
+            : "登入後即可選擇劇情走向，獲得你的專屬結局。"}
         </p>
       </header>
 

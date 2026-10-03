@@ -80,7 +80,7 @@ export default function AdminStoryList({ stories }: { stories: AdminStoryRow[] }
             {list.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-ink/50">
-                  已經冇故事喇
+                  已沒有故事
                 </td>
               </tr>
             )}
@@ -91,9 +91,9 @@ export default function AdminStoryList({ stories }: { stories: AdminStoryRow[] }
       {target && (
         <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-brick font-bold mb-2">確定刪除呢篇故事？</h3>
+            <h3 className="text-brick font-bold mb-2">確定刪除這篇故事？</h3>
             <p className="text-sm text-ink/60 mb-5 leading-relaxed">
-              「{target.title}」刪除後會連帶清走所有相關鍾意記錄同讀者專屬結局，動作不可撤銷。
+              「{target.title}」刪除後會一併移除所有相關的喜歡記錄及讀者專屬結局，動作不可撤銷。
             </p>
             {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
             <div className="flex justify-end gap-3">
@@ -112,7 +112,7 @@ export default function AdminStoryList({ stories }: { stories: AdminStoryRow[] }
                 className="px-4 py-2 rounded-md bg-brick text-cream text-sm font-bold disabled:opacity-60"
                 disabled={isPending}
               >
-                {isPending ? "刪除緊…" : "確定刪除"}
+                {isPending ? "刪除中…" : "確定刪除"}
               </button>
             </div>
           </div>

@@ -2,10 +2,25 @@
 
 import { useEffect, useState } from "react";
 
+// 2026-10-04：開場動畫只喺第一次入嚟顯示。回頭客由 layout.tsx <head> 嘅 inline script
+// 喺 paint 前加 html.entrance-seen class（CSS 即刻隱藏），唔會閃一下；呢度再 setShow(false) 收尾。
+export const ENTRANCE_SEEN_KEY = "gushi_entrance_seen";
+
 export default function BookEntrance() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
+    let seen = false;
+    try {
+      seen = localStorage.getItem(ENTRANCE_SEEN_KEY) === "1";
+      if (!seen) localStorage.setItem(ENTRANCE_SEEN_KEY, "1");
+    } catch {
+      // 私密模式／storage 被封：照舊每次顯示（2 秒自動消失），唔影響使用
+    }
+    if (seen) {
+      setShow(false);
+      return;
+    }
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;

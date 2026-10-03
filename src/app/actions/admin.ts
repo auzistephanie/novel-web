@@ -18,7 +18,7 @@ export async function deleteStory(
     } = await supabase.auth.getUser();
 
     if (!user || !isAdmin(user.email)) {
-      return { ok: false, error: "冇權限刪除" };
+      return { ok: false, error: "沒有權限刪除" };
     }
 
     const { error } = await supabase.from("novel_stories").delete().eq("id", storyId);

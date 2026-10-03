@@ -318,8 +318,38 @@ function validateContent(content: string, storyType: StoryType): string[] {
   return fails;
 }
 
+// 2026-10-04：首頁 6 張卡 6 個標題都係「XX那刻/那夜，YY」——源頭係 generateTitle() 嘅例子
+// 本身就係呢個句式。例子已換走，再加 code 層「句式指紋」：同一句式唔准連續出現，
+// 「時間點」句式（那刻/那夜/當晚…）因為已經用濫，近 6 篇內最多一次。
+type TitleShape = "time_moment" | "question" | "two_clause" | "single_phrase";
+const TIME_MOMENT_RE = /(那刻|那一刻|那夜|那一夜|那晚|那天|那日|那年|當晚|當天|當夜|當日|之夜|之後|瞬間|之時|時候)[，,]/;
+const SHAPE_LABEL: Record<TitleShape, string> = {
+  time_moment: "「某時刻，某結果」時間點句式（例如帶那刻／那夜／當晚）",
+  question: "問句",
+  two_clause: "逗號分兩截的句式",
+  single_phrase: "一句到底、沒有逗號的句式",
+};
+function titleShape(title: string): TitleShape {
+  if (TIME_MOMENT_RE.test(title)) return "time_moment";
+  if (/[？?]$/.test(title)) return "question";
+  if (/[，,]/.test(title)) return "two_clause";
+  return "single_phrase";
+}
+function shapeFails(title: string, recentTitles: string[]): string[] {
+  const shape = titleShape(title);
+  const recentShapes = recentTitles.filter(Boolean).map(titleShape);
+  if (shape === "time_moment" && recentShapes.slice(0, 6).includes("time_moment")) {
+    return [`句式重複：近期已用過${SHAPE_LABEL.time_moment}，今次不可以再用`];
+  }
+  if (recentShapes.length >= 2 && recentShapes[0] === shape && recentShapes[1] === shape) {
+    return [`句式重複：最近兩篇都是${SHAPE_LABEL[shape]}，今次必須換另一種句式`];
+  }
+  return [];
+}
+
 function validateTitle(title: string, recentTitles: string[]): string[] {
   const fails: string[] = [];
+  fails.push(...shapeFails(title, recentTitles));
   if (!title) fails.push("標題為空");
   if (TITLE_FORMULAIC.test(title)) fails.push("標題formulaic pattern");
   for (const ch of SIMPLIFIED_ONLY) {
@@ -343,10 +373,14 @@ async function generateTitle(content: string, recentTitles: string[]): Promise<s
     `1. 必須包含強烈衝突、極端反差或懸念對白。要讓人一看就想知道「到底發生甚麼事」。\n` +
     `2. 標題提到的畫面或情節，必須是全文真實出現過的，不可以編造一個內文沒有的場面。\n` +
     `3. 字數控制在 8-16 字。\n\n` +
-    `【句式參考（學結構，不要抄內容）】\n` +
-    `-「[極端動作]，[震撼反差結果]」例如：簽下離婚協議那夜，他砸了我的畫室\n` +
-    `-「[角色最有張力的一句對白]」例如：叫我一聲老公，這條命給你\n` +
-    `-「[身份錯位／秘密場面]」例如：替嫁當晚，被假瞎的他抓個正著\n\n` +
+    // 2026-10-04：舊例子「簽下離婚協議那夜…」「替嫁當晚…」令模型篇篇寫「XX那刻/那夜，YY」，已換走。
+    `【句式參考（學結構，不要抄內容；每次換一種，不要總是用同一種）】\n` +
+    `- 角色最狠的一句對白，例如：叫我一聲老公，這條命給你\n` +
+    `- 一句反問，例如：誰准你替我認罪？\n` +
+    `- 身份反差直述，例如：被我開除的實習生，是新來的總監\n` +
+    `- 帶數字的懸念，例如：第三張診斷書上，寫著我的名字\n` +
+    `- 一個動作加一個後果，例如：我撕了同意書，全場不敢出聲\n` +
+    `- 不要用「某時刻（那刻／那夜／那天／當晚／之後），某結果」這種時間點開頭的句式。\n\n` +
     `【禁止】\n` +
     `- 禁止「XX的YY」「XX之YY」這類老土句式。\n` +
     `- 必須用繁體字，不可以有簡體字或粵語口語詞（例如「嘅」「唔」「佢」「咗」「冇」）。\n` +
@@ -356,9 +390,9 @@ async function generateTitle(content: string, recentTitles: string[]): Promise<s
     `只輸出標題本身，不要加引號、解釋或其他文字。`;
   let userMsg =
     `以下是故事全文，請根據這個故事的實際內容想一個標題：\n\n${content}\n\n` +
-    `近期已用標題（不可以與這些重複或高度相似）：${recentTitles.join("、") || "無"}`;
+    `近期已用標題（不可以與這些重複或高度相似，句式也要不同）：${recentTitles.join("、") || "無"}`;
   let lastTitle = "";
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const raw = await deepseekChat(
       [
         { role: "system", content: systemMsg },

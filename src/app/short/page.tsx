@@ -26,7 +26,7 @@ export default async function ShortPage({
       <header className="mb-8">
         <h1 className="font-serif font-black text-3xl mb-1">短篇故事</h1>
         <p className="text-ink/60">
-          有頭有尾、一次睇晒，已有結局，唔使追更，適合想即刻睇到結局嘅您。
+          有頭有尾，一次讀完，結局已寫好，無須追更，適合想立即看到結局的你。
         </p>
       </header>
 

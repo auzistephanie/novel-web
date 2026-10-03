@@ -109,6 +109,11 @@ body {
     visibility: hidden;
   }
 }
+/* 2026-10-04：回頭客唔再顯示開場動畫 */
+.entrance-seen .entrance-stage {
+  display: none !important;
+}
+
 .entrance-stage {
   position: fixed;
   inset: 0;

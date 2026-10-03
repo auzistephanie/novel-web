@@ -7,7 +7,7 @@ export default function Footer() {
           顧事
         </div>
         <p className="text-xs">
-          © {new Date().getFullYear()} 顧事 · AI 生成中文網絡小說
+          © {new Date().getFullYear()} 顧事 · 每日中文網絡小說
         </p>
       </div>
     </footer>

@@ -56,7 +56,7 @@ export default async function BrowsePage({
 
       {stories.length === 0 ? (
         <div className="border border-dashed border-ink/30 rounded-xl p-10 text-center text-ink/50">
-          呢個題材暫時未有故事，請留意下一批更新。
+          這個題材暫時沒有故事，請留意下一批更新。
         </div>
       ) : (
         <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">

@@ -34,7 +34,7 @@ export default async function CategoriesPage() {
       <header className="mb-8">
         <h1 className="font-serif font-black text-3xl mb-1">題材</h1>
         <p className="text-ink/60">
-          揀一個題材，睇晒該類所有故事（短篇＋互動結局一齊）。
+          選一個題材，瀏覽該類的所有故事（包括短篇及互動結局）。
         </p>
       </header>
 

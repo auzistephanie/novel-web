@@ -112,7 +112,7 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
   if (items.length === 0) {
     return (
       <div className="border-2 border-dashed border-ink/20 rounded-2xl p-8 text-center text-ink/50 text-sm">
-        結局本已經清空喇，去每日連載再揀個故事鍾意返啦。
+        結局本已清空，到互動結局再挑一個故事吧。
       </div>
     );
   }
@@ -188,7 +188,7 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
                       : "border-ink/20 text-ink/40 hover:border-brick hover:text-brick"
                   } ${isPending ? "opacity-50" : ""}`}
                 >
-                  {isPending && isConfirming ? "刪緊…" : isConfirming ? "確定刪除？" : "刪除"}
+                  {isPending && isConfirming ? "刪除中…" : isConfirming ? "確定刪除？" : "刪除"}
                 </button>
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function EndingBookshelf({ endings }: { endings: EndingRow[] }) {
                 onClick={() => startPicker(e.story_id)}
                 className="inline-flex items-center gap-1 text-xs font-bold text-indigo hover:text-brick transition-colors"
               >
-                揀過第二個選擇，睇下另一個結局 →
+                換一個選擇，看看另一個結局 →
               </button>
             )}
 
