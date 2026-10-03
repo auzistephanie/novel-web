@@ -36,7 +36,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(localStorage.getItem('gushi_entrance_seen')==='1')document.documentElement.classList.add('entrance-seen')}catch(e){}",
+              "try{if(localStorage.getItem('gushi_entrance_seen')==='1')document.documentElement.setAttribute('data-entrance-seen','1')}catch(e){}",
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

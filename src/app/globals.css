@@ -110,7 +110,8 @@ body {
   }
 }
 /* 2026-10-04：回頭客唔再顯示開場動畫 */
-.entrance-seen .entrance-stage {
+/* 用 data attribute 唔用 class：React hydration 會重寫 <html> className */
+[data-entrance-seen] .entrance-stage {
   display: none !important;
 }
 

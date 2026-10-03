@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 // 2026-10-04：開場動畫只喺第一次入嚟顯示。回頭客由 layout.tsx <head> 嘅 inline script
-// 喺 paint 前加 html.entrance-seen class（CSS 即刻隱藏），唔會閃一下；呢度再 setShow(false) 收尾。
+// 喺 paint 前加 html[data-entrance-seen]（CSS 即刻隱藏）；hydration 後用 useLayoutEffect（paint 前）setShow(false)，唔會閃。
 export const ENTRANCE_SEEN_KEY = "gushi_entrance_seen";
 
 export default function BookEntrance() {
   const [show, setShow] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let seen = false;
     try {
       seen = localStorage.getItem(ENTRANCE_SEEN_KEY) === "1";
