@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LikeButton from "@/components/LikeButton";
 import EndingFlow from "@/components/EndingFlow";
+import StoryReader from "@/components/StoryReader";
 
 export const revalidate = 0;
 // 畀 EndingFlow 嘅 server actions（getChoices/generateEnding）足夠時間等 DeepSeek 回應
@@ -76,9 +77,7 @@ export default async function StoryPage({
           <p className="text-sm text-ink/50 mt-1">主角：{story.protagonist}</p>
         )}
 
-        <article className="mt-6 whitespace-pre-wrap leading-8 text-ink/85">
-          {story.content}
-        </article>
+        <StoryReader content={story.content} />
       </div>
 
       {isShort ? (

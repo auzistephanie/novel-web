@@ -15,7 +15,7 @@ export type ParentCategory = {
   color: CategoryColor;
 };
 
-// 大類固定色（復古花磚色系）— 揀新色時避開現有色，7 大類已用晒 7 隻分明色
+// 大類固定色（復古花磚色系）— 揀新色時避開現有色，9 大類各一隻分明色
 // 加新大類記得同時加 color，唔好留空跌 fallback 灰
 export const PARENT_CATEGORIES: ParentCategory[] = [
   {
@@ -83,7 +83,7 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
   {
     key: "system-scifi",
     label: "系統腦洞",
-    genres: ["系統流", "末世腦洞", "玄學風水", "漫畫感爽文"],
+    genres: ["系統流", "末世腦洞", "玄學風水", "漫畫感爽文", "腦洞奇想", "都市奇想"], // 2026-10-04 腦洞奇想線
     color: { bar: "#5c4a7a", text: "#5c4a7a", bg: "rgba(92,74,122,0.1)" }, // 紫
   },
   {
@@ -97,6 +97,19 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
       "強強交鋒", // 2026-08-13 新骨架 power_clash 用（現代設定）。⚠️「雙強對峙」呢個名已經俾咗古言宮廷大類攞咗，冇撞名
     ],
     color: { bar: "#2f4a3e", text: "#2f4a3e", bg: "rgba(47,74,62,0.1)" }, // 墨綠
+  },
+  // 2026-10-04 新故事線（route.ts LANES）
+  {
+    key: "dark-comedy",
+    label: "黑色幽默",
+    genres: ["都市荒誕", "社畜求生", "黑色喜劇"],
+    color: { bar: "#2e7d7a", text: "#2a6f6c", bg: "rgba(46,125,122,0.1)" }, // 青綠
+  },
+  {
+    key: "warm-twist",
+    label: "溫情反轉",
+    genres: ["親情催淚", "溫情反轉", "暗戀成真"],
+    color: { bar: "#b06a8a", text: "#9a5675", bg: "rgba(176,106,138,0.1)" }, // 豆沙粉
   },
 ];
 
