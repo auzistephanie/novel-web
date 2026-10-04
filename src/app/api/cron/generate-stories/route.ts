@@ -225,9 +225,9 @@ ${LANG_RULE}
 
 const SERIAL_STRUCTURE = `
 【serial（連載，有互動結局功能）結構規定】
-⚠️ 字數硬性下限 2200 字，目標 2800–4500 字。少於 2200 字一律不合格會被打回重寫，所以必須寫足。
+⚠️ 字數硬性下限 3600 字，目標 4000–6500 字。少於 3600 字一律不合格會被打回重寫，所以必須寫足。
 如果覺得情節不夠長，就多加一層衝突或多寫一個爆點場面，不要草草收尾。
-節奏要求：分 3 至 4 節，每節結尾都要留一個鉤子；全篇主要反轉 2 至 3 個，每個都要有伏筆。不可以連續兩大段沒有推進。
+節奏要求：分 4 至 5 節，每節結尾都要留一個鉤子；全篇主要反轉 2 至 3 個，每個都要有伏筆。不可以連續兩大段沒有推進。
 結尾必須停在一個具體的「抉擇／未揭曉節點」——對方即將講出關鍵答案的前一秒、主角即將做出攸關命運的選擇、
 秘密即將揭穿的前一刻、關鍵籌碼即將亮出的前一刻。
 這個節點要令讀者能想到至少兩種截然不同的後續發展（例如：他會不會揭穿我？他會不會原諒我？），才適合後續互動結局分支。
@@ -235,8 +235,8 @@ const SERIAL_STRUCTURE = `
 `;
 
 const SHORT_STRUCTURE = `
-【short（短篇，沒有互動結局功能）結構規定】字數 1500–3000字。
-節奏要求：分 3 至 4 節，每節結尾都要留一個鉤子；全篇主要反轉 2 至 3 個，每個都要有伏筆。
+【short（短篇，沒有互動結局功能）結構規定】字數 3000–5000字，硬性下限 2600 字。
+節奏要求：分 4 至 5 節，每節結尾都要留一個鉤子；全篇主要反轉 2 至 3 個，每個都要有伏筆。
 結尾必須完整收尾：開頭拋出的核心問題要得到回答，衝突要有結果，情緒必須落地，絕對不可以留懸念或開放式結局。
 容許苦結局（求而不得、遲來的真相），不一定要 happy ending，但情節本身一定要解決，不可以留手尾。
 最後一句必須是可以獨立截圖傳播的金句。
@@ -254,8 +254,9 @@ const SECTION_MARK = "＊＊＊";
 
 const COMMON_READ_THROUGH = `
 【全線共用：讓讀者一口氣讀到最後】
+0. 先讓人看得懂（最優先，高於懸念與文采）：第一節的頭 300 字內必須用平白的句子交代清楚——主角是誰、身處哪裡、想要什麼、眼前出了什麼事。第一次提到的對話或事件要直接寫出內容，禁止用「那句話」「那六個字」「那件事」這類讀者還不知道的指代吊胃口。如果有特殊規則（例如奇怪的 App、能力），必須在第一節用兩三句直白說清楚它能做什麼、代價是什麼；規則一經確立，全文不可以自相矛盾，也不可以用數字額度、次數換算之類容易算錯的設定。每條伏筆、每個神秘線索都必須在結尾前回收；人物做出反常行為（例如說狠話、疏遠對方），必須先在前文鋪墊動機。普通讀者一次讀完就能向朋友複述劇情，才算合格。
 1. 核心問題：開頭 100 字內必須拋出一個具體、讀者急著想知道答案的問題（例如「她為甚麼要替仇人作證？」「明天的訊息是誰發的？」），這個問題貫穿全文。short 必須在最後一節才回答；serial 必須把答案推到揭曉前一秒。不可以中途提早揭曉。
-2. 分節：全文分成 3 至 4 節，節與節之間單獨一行只寫「${SECTION_MARK}」（三個全形星號），不要寫節標題或編號。每一節的最後一句都必須是鉤子：一個新的疑點、一個未完成的動作、或一句令人不安的話。
+2. 分節：全文分成 4 至 5 節，節與節之間單獨一行只寫「${SECTION_MARK}」（三個全形星號），不要寫節標題或編號。每一節的最後一句都必須是鉤子：一個新的疑點、一個未完成的動作、或一句令人不安的話。
 3. 反轉：全篇主要反轉 2 至 3 個，寧少勿亂。每個反轉之前，前文必須已經埋下讀者看得見的伏筆。禁止靠連串巧合推進——讀者一旦不信，就不會讀到最後。
 4. 段落短：1 至 3 句一段，關鍵句獨立成段，適合手機閱讀。
 5. 結尾最後一句要短、有力、可以獨立截圖傳播。
@@ -521,6 +522,9 @@ type JudgeRecord = {
   p50: number | null;
   p75: number | null;
   end: number | null;
+  open: number | null;
+  logic: number | null;
+  issue: string;
   drop: string;
   picked: boolean;
 };
@@ -559,7 +563,7 @@ function recentStakes(metas: GenMeta[], window = 6): Set<string> {
 // （finish_reason=stop但冇===TITLE===），改用獨立嘅generateTitle() call，保證標題一定睇住實際內文嚟諗。
 function validateContent(content: string, storyType: StoryType): string[] {
   const fails: string[] = [];
-  const minLen = storyType === "serial" ? 2200 : 1500;
+  const minLen = storyType === "serial" ? 3600 : 2600;
   if (content.length < minLen) fails.push(`字數不足(${content.length}<${minLen})`);
   for (const ch of SIMPLIFIED_ONLY) {
     if (content.includes(ch)) fails.push(`簡體字:${ch}`);
@@ -672,7 +676,7 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
 async function selfCheckClosure(content: string, storyType: StoryType): Promise<boolean> {
   const question =
     storyType === "short"
-      ? "以下短篇故事結局係咪完整收尾（衝突有結果、疑問有答案、有明確情感爆發點），冇留低任何懸念或開放式結局？"
+      ? "以下短篇故事結局係咪完整收尾（衝突有結果、疑問有答案、情緒已經落地；餘韻式或安靜嘅收尾都算合格，只要冇留低未答嘅核心懸念）？"
       : "以下連載故事結尾係咪停喺一個具體嘅抉擇/未揭曉節點（令讀者諗到至少兩種唔同後續發展），而唔係已經完整解決咗成個衝突？";
   const raw = await deepseekChat(
     [
@@ -783,6 +787,7 @@ async function generateLanePremise(
     `- 100 字以內，繁體中文，寫成一段連貫敘述（不要分點、不要標題、不要解釋）。\n` +
     `- 必須是「正在發生」的場面，不是背景設定。\n` +
     `- 讀完要讓人立刻冒出一個具體問題，而且很想知道答案。\n` +
+    `- 必須一次看懂：交代清楚誰、在做什麼、發生什麼事；不可以用「那句話」「那件事」這類沒說明的指代；奇想規則要簡單到一句話講完，禁止數字額度、次數換算之類的機制。\n` +
     `${COMMON_BANS}\n` +
     `【張力標尺（示範這個吸引力水平，但嚴禁抄襲它的情節、職業、場景或對白）】\n${lane.seeds.join("\n")}`;
   const userMsg =
@@ -807,7 +812,8 @@ async function judgeLanePremise(premise: string, lane: Lane): Promise<boolean> {
     `合格條件（必須全部滿足）：\n` +
     `1. 是正在發生的場面，不是背景交代\n` +
     `2. 讀完會冒出一個具體、想知道答案的問題\n` +
-    `3. ${lane.judgeHint}\n\n` +
+    `3. ${lane.judgeHint}\n` +
+    `4. 一次就能看懂：沒有未說明的指代，規則或設定簡單清楚，不靠數字額度\n\n` +
     `開局：「${premise}」\n\n` +
     `只輸出 JSON，不要其他文字：{"pass": true} 或 {"pass": false}`;
   try {
@@ -840,7 +846,7 @@ function sectionCount(content: string): number {
 }
 
 // ---- AI 讀者評分：喺 25%／50%／75% 位置插標記，叫一個「好易棄書」嘅讀者逐點打分 ----
-type ReaderScore = { p25: number; p50: number; p75: number; end: number; total: number; drop: string };
+type ReaderScore = { p25: number; p50: number; p75: number; end: number; total: number; drop: string; open: number; logic: number; issue: string };
 
 function insertReadMarks(content: string): string {
   const paras = content.split("\n");
@@ -866,21 +872,31 @@ async function readerJudge(content: string): Promise<ReaderScore | null> {
     `下面的故事中插入了【讀者位置 25%】【讀者位置 50%】【讀者位置 75%】三個標記。\n` +
     `請你誠實地代入這個讀者，在每個標記處評分「此刻有多想繼續看下去」（1-10 分），讀完後再評「讀完的滿足感」（1-10 分）。\n` +
     `評分要嚴格：普通的故事只值 5-6 分，只有真正讓人停不下來的才給 8 分以上。\n\n` +
+    `另外請再做兩項「看不看得懂」檢查（1-10 分，嚴格）：\n` +
+    `- open：只看開頭約 300 字，你能不能清楚說出誰在哪裡、發生什麼事、特殊規則是什麼？有未說明的指代（如「那句話」）或一頭霧水就低於 6 分。\n` +
+    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？有明顯矛盾或沒回收就低於 6 分。\n\n` +
     `${insertReadMarks(content)}\n\n` +
-    `只輸出 JSON，不要其他文字：{"p25":分數,"p50":分數,"p75":分數,"end":分數,"drop":"最可能棄書的位置與原因，20 字內"}`;
+    `只輸出 JSON，不要其他文字：{"p25":分數,"p50":分數,"p75":分數,"end":分數,"open":分數,"logic":分數,"issue":"最大的看不懂之處，25 字內","drop":"最可能棄書的位置與原因，20 字內"}`;
   try {
     const raw = await deepseekChat([{ role: "user", content: prompt }], {
       model: "deepseek-chat",
       temperature: 0,
-      maxTokens: 120,
-      timeoutMs: 40_000,
+      maxTokens: 220,
+      timeoutMs: 50_000,
     });
     const m = raw.match(/\{[\s\S]*?\}/);
     if (!m) return null;
     const j = JSON.parse(m[0]) as Partial<ReaderScore>;
     const n = (v: unknown) => (typeof v === "number" && v >= 0 && v <= 10 ? v : 0);
     const s = { p25: n(j.p25), p50: n(j.p50), p75: n(j.p75), end: n(j.end) };
-    return { ...s, total: s.p25 + s.p50 + s.p75 + s.end, drop: String(j.drop ?? "").slice(0, 40) };
+    return {
+      ...s,
+      total: s.p25 + s.p50 + s.p75 + s.end,
+      drop: String(j.drop ?? "").slice(0, 40),
+      open: n(j.open),
+      logic: n(j.logic),
+      issue: String(j.issue ?? "").slice(0, 50),
+    };
   } catch {
     return null;
   }
@@ -901,7 +917,8 @@ async function writeDraft(
   storyType: StoryType,
   form: (typeof NARRATIVE_FORMS)[number],
   temperature: number,
-  deadline: number
+  deadline: number,
+  hardEnd: number
 ): Promise<Draft> {
   const firstMsg = `${baseUserMsg}\n\n【敘事形式】${form.instruction}`;
   let userMsg = firstMsg;
@@ -916,7 +933,7 @@ async function writeDraft(
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      { model: "deepseek-chat", temperature, maxTokens: 6000, timeoutMs: 110_000 }
+      { model: "deepseek-chat", temperature, maxTokens: 11000, timeoutMs: Math.max(30_000, Math.min(165_000, hardEnd - Date.now())) }
     );
     const c = normalizeSections(
       (raw.split("===CONTENT===")[1]?.split("===END===")[0]?.trim()) || raw.trim()
@@ -925,7 +942,7 @@ async function writeDraft(
 
     const fails = validateContent(content, storyType);
     const n = sectionCount(content);
-    if (n < 3 || n > 5) fails.push(`分節數不對（${n}節，要3-4節，用單獨一行${SECTION_MARK}分隔）`);
+    if (n < 4 || n > 6) fails.push(`分節數不對（${n}節，要4-5節，用單獨一行${SECTION_MARK}分隔）`);
     if (fails.length === 0) {
       const closureOk = await selfCheckClosure(content, storyType).catch(() => true);
       if (closureOk) return { content, pass: true, validateNote: "PASS", retries: attempt, form: form.key, score: null };
@@ -936,6 +953,45 @@ async function writeDraft(
     userMsg = `${firstMsg}\n\n⚠️重寫：上一次不合格，原因：${validateNote}。請修正這些問題再寫一次。`;
   }
   return { content, pass: false, validateNote, retries, form: form.key, score: null };
+}
+
+// 兩稿都唔可用（睇唔明／太短）時，用編輯意見喺最好嗰稿上修一次，再評分
+async function repairDraft(
+  systemMsg: string,
+  d: Draft,
+  storyType: StoryType,
+  hardEnd: number
+): Promise<Draft | null> {
+  const problems = [
+    d.score && d.score.open < 6 ? `開頭看不懂：${d.score.issue}` : "",
+    d.score && d.score.logic < 6 ? `邏輯／交代不足：${d.score.issue}` : "",
+    d.validateNote && d.validateNote !== "PASS" ? d.validateNote : "",
+  ].filter(Boolean);
+  const minLen = storyType === "serial" ? 3600 : 2600;
+  const userMsg =
+    `以下是一篇已寫好的故事，編輯指出的問題：${problems.join("；") || d.score?.issue || "設定交代不清"}。\n` +
+    `請在保留原有劇情、人物和結構的前提下，修改並輸出完整新版全文：\n` +
+    `1. 補足說明：特殊規則在第一節用兩三句直白講清楚，全文不可自相矛盾；動機要有鋪墊；所有伏筆和線索在結尾前回收，結局要交代清楚。\n` +
+    `2. 字數不得少於 ${minLen} 字（可以擴寫場景和對白補足），維持 4 至 5 節，節與節之間單獨一行「${SECTION_MARK}」。\n` +
+    `3. 繁體中文，格式：\n===CONTENT===\n（全文）\n===END===\n\n【原稿】\n${d.content}`;
+  try {
+    const raw = await deepseekChat(
+      [
+        { role: "system", content: systemMsg },
+        { role: "user", content: userMsg },
+      ],
+      { model: "deepseek-chat", temperature: 0.8, maxTokens: 11000, timeoutMs: Math.max(30_000, Math.min(165_000, hardEnd - Date.now())) }
+    );
+    const c = normalizeSections((raw.split("===CONTENT===")[1]?.split("===END===")[0]?.trim()) || raw.trim());
+    if (!c) return null;
+    const fails = validateContent(c, storyType);
+    const n = sectionCount(c);
+    if (n < 4 || n > 6) fails.push(`分節數不對（${n}節）`);
+    const score = await readerJudge(c);
+    return { content: c, pass: fails.length === 0, validateNote: fails.length ? fails.join("；") : "PASS", retries: d.retries + 1, form: `${d.form}+repair`, score };
+  } catch {
+    return null;
+  }
 }
 
 async function generateOne(
@@ -1035,16 +1091,17 @@ async function generateOne(
   const baseUserMsg =
     `【故事開局（必須嚴格按這個開局展開，不可以改成另一個故事）】\n${premise}\n\n` +
     `${laneLine}\nstory_type：${storyType}。\n\n` +
-    `請由這個開局的第一秒寫起（第一句就是現場，不要重新交代背景），寫成完整正文，分 3 至 4 節，節與節之間單獨一行寫「${SECTION_MARK}」。\n` +
+    `請由這個開局展開（以現場畫面開場，但頭 300 字內必須讓讀者清楚知道人物是誰、在哪裡、發生什麼事，不要用指代吊胃口），寫成完整正文，分 4 至 5 節，節與節之間單獨一行寫「${SECTION_MARK}」。\n` +
     `只寫正文，不需要想標題（標題另外處理）。\n` +
     `輸出格式必須是：\n===CONTENT===\n（全文）\n===END===\n不要加任何其他文字或解釋。`;
 
   // ---- 雙稿並行：A 稿一般敘事；B 稿一半機會試其他敘事形式 ----
   const formB = Math.random() < 0.5 ? pickForm(lane.key, storyType) : NARRATIVE_FORMS[0];
-  const deadline = t0 + 150_000;
+  const deadline = t0 + 110_000; // 過咗呢個時間就唔重寫（長文一次要 2-3 分鐘）
+  const hardEnd = t0 + 215_000; // 單次生成最遲收尾時間，留 ~80 秒俾評分＋標題
   const draftResults = await Promise.allSettled([
-    writeDraft(systemMsg, baseUserMsg, storyType, NARRATIVE_FORMS[0], 1.0, deadline),
-    writeDraft(systemMsg, baseUserMsg, storyType, formB, 1.1, deadline),
+    writeDraft(systemMsg, baseUserMsg, storyType, NARRATIVE_FORMS[0], 1.0, deadline, hardEnd),
+    writeDraft(systemMsg, baseUserMsg, storyType, formB, 1.1, deadline, hardEnd),
   ]);
   const drafts = draftResults
     .filter((r): r is PromiseFulfilledResult<Draft> => r.status === "fulfilled")
@@ -1058,10 +1115,33 @@ async function generateOne(
   // ---- AI 讀者評分（兩稿並行），優先揀過驗收嘅，再揀分高 ----
   const scores = await Promise.all(drafts.map((d) => readerJudge(d.content)));
   drafts.forEach((d, i) => (d.score = scores[i]));
-  const ranked = [...drafts].sort(
-    (a, b) => Number(b.pass) - Number(a.pass) || (b.score?.total ?? -1) - (a.score?.total ?? -1)
-  );
+  // 睇唔睇得明：open／logic 任何一項 <6 視為「看不懂」。優先揀看得懂＋過驗收，再揀分高。
+  const clear = (d: Draft) => !d.score || (d.score.open >= 6 && d.score.logic >= 6);
+  // 簡體字稿件絕對唔可以發佈（validate 失敗但仍會被保底揀中嘅話，會直接上線）
+  const usable = (d: Draft) => clear(d) && !d.validateNote.includes("簡體字");
+  let ranked = drafts
+    .filter(usable)
+    .sort((a, b) => Number(b.pass) - Number(a.pass) || (b.score?.total ?? -1) - (a.score?.total ?? -1));
+  if (ranked.length === 0 && Date.now() < t0 + 150_000) {
+    // 兩稿都唔可用：喺最高分（冇簡體字）嗰稿上按編輯意見修一次
+    const base = drafts
+      .filter((d) => !d.validateNote.includes("簡體字"))
+      .sort((a, b) => (b.score?.total ?? -1) - (a.score?.total ?? -1))[0];
+    if (base) {
+      const fixed = await repairDraft(systemMsg, base, storyType, t0 + 235_000);
+      if (fixed && usable(fixed) && fixed.pass) {
+        drafts.push(fixed);
+        ranked = [fixed];
+      }
+    }
+  }
   const best = ranked[0];
+  if (!best) {
+    // 修完仍然唔可用（睇唔明／簡體字／太短）：寧願今日少出一篇，都唔放問題稿上去
+    throw new Error(
+      `兩稿都不可用，不發佈：${drafts.map((d) => `${d.form} open=${d.score?.open} logic=${d.score?.logic} ${d.score?.issue} ${d.validateNote.slice(0, 30)}`).join(" | ")}`
+    );
+  }
 
   genMeta.form = best.form;
   genMeta.judge = drafts.map((d) => ({
@@ -1072,11 +1152,14 @@ async function generateOne(
     p50: d.score?.p50 ?? null,
     p75: d.score?.p75 ?? null,
     end: d.score?.end ?? null,
+    open: d.score?.open ?? null,
+    logic: d.score?.logic ?? null,
+    issue: d.score?.issue ?? "",
     drop: d.score?.drop ?? "",
     picked: d === best,
   }));
 
-  const title = await generateTitle(best.content, recentTitles, t0 + 270_000);
+  const title = await generateTitle(best.content, recentTitles, t0 + 275_000);
 
   return {
     genre,

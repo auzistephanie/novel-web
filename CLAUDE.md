@@ -27,7 +27,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 
 ## 內容型態（story_type）
 
-`novel_stories.story_type`：`serial`（連載，2200-8000字，停喺抉擇/未揭曉節點）／`short`（完整短篇，1500-3000字，有頭有尾）。首頁按呢個欄位分兩個 section。House Style／字數／收尾規定嘅詳細字眼見 `src/app/api/cron/generate-stories/route.ts` 嘅 `STYLE_2026`／`SERIAL_STRUCTURE`／`SHORT_STRUCTURE` 常數。
+`novel_stories.story_type`：`serial`（連載，3600-8000字，停喺抉擇/未揭曉節點）／`short`（完整短篇，2600-5000字，有頭有尾）。首頁按呢個欄位分兩個 section。House Style／字數／收尾規定嘅詳細字眼見 `src/app/api/cron/generate-stories/route.ts` 嘅 `STYLE_2026`／`SERIAL_STRUCTURE`／`SHORT_STRUCTURE` 常數。
 
 ⚠️ `short` 故事已經有齊結局，**唔應該**再生成「專屬結局」——`story` 詳情頁對 `short` 故事顯示唔同文案（冇結局生成 flow）。
 
@@ -38,8 +38,8 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`。10-04 起 4 條故事線 `LANES`（爽文逆襲＝Hook引擎／黑色幽默／溫情反轉／腦洞奇想），雙稿＋`readerJudge` 揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
-  `gen_meta`＝`{lane,hook?,stake?,angle?,premise,form,judge}`。測試：`?dry=1&lane=` 唔寫 DB。詳情 → daily-novel `CHANGELOG.md` 08-19、10-04
+- 邏輯全部喺 `route.ts`。10-04 起 4 條故事線 `LANES`（爽文逆襲＝Hook引擎／黑色幽默／溫情反轉／腦洞奇想），雙稿＋`readerJudge`（含看懂閘門）揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
+  `gen_meta`＝`{lane,hook?,stake?,angle?,premise,form,judge}`。測試：`?dry=1&lane=` 唔寫 DB。詳情見 CHANGELOG 10-04
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態
