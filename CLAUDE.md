@@ -23,7 +23,7 @@ Push（`github_push.py`，永不 git CLI・HTTPS・一 run 一 commit・**開工
 
 `/login`（Supabase Auth）· `/`（首頁，「短篇故事」＋「每日連載」兩個 section，各自獨立 genre 篩選）· `/story/[id]`（全文＋結局）· `/my-endings`（我的結局本，登入後先見，`EndingBookshelf.tsx` 書脊格仔版面，改呢個元件唔好喺 `page.tsx` 加返 inline timeline）· `/admin`（故事列表＋刪除，淨 `auzistephanie@gmail.com` login 見到，`src/lib/admin.ts` 白名單；DELETE RLS policy 淨限 admin email，`novel_likes`／`novel_endings` cascade 自動清）
 
-Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 `src/components/NavBar.tsx`（檔名未改但內容已經係 sidebar+mobile bar）。
+Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 `src/components/NavBar.tsx`。
 
 ## 內容型態（story_type）
 
@@ -38,7 +38,7 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`。10-04 起 4 條故事線 `LANES`（爽文逆襲＝Hook引擎／黑色幽默／溫情反轉／腦洞奇想），雙稿＋`readerJudge` 評分揀優；內文用單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 靠呢個分節）。
+- 邏輯全部喺 `route.ts`。10-04 起 4 條故事線 `LANES`（爽文逆襲＝Hook引擎／黑色幽默／溫情反轉／腦洞奇想），雙稿＋`readerJudge` 揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
   `gen_meta`＝`{lane,hook?,stake?,angle?,premise,form,judge}`。測試：`?dry=1&lane=` 唔寫 DB。詳情 → daily-novel `CHANGELOG.md` 08-19、10-04
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
@@ -56,7 +56,6 @@ App 名「顧事」；花磚（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／
 
 - `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
 - `.env.local` 已經有真實 Supabase URL/anon key／DeepSeek key（gitignored，唔喺 repo 度）；`.env` 有 `GITHUB_TOKEN`（同樣 gitignored）
-- 部署去 Vercel 要手動 connect 呢個 GitHub repo 一次（`vercel.com/new`），詳見 README「部署」一節
 - ⚠️ **本 repo 獨立推**（推 daily-novel 唔會連佢一齊）：Cowork **container** 跑會撞 `403 not enabled for this session`（sandbox 擋 api.github.com）→ 經 `desktop-commander` 喺真 Mac 跑就冇事（07-31 實測 `c319031`）。
 - ⚠️ **Cowork sandbox 唔好直接喺 mounted folder 度 `git commit`/`git fetch`**：FUSE bridge 對 `.git` 內部寫入會報 `Operation not permitted`，令 `.git/index` 近乎空白。雲端要驗證改動時：喺 sandbox `/tmp` fresh clone → 複製改動檔案落去 → 喺嗰度跑 build 驗證，唔好郁 mounted folder 嘅 `.git`。
 
