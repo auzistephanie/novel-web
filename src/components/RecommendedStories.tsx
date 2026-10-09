@@ -9,6 +9,7 @@ type Story = {
   content: string;
   created_at: string;
   story_type?: string;
+  gen_meta?: { teaser?: string } | null;
 };
 
 // 規則式推薦：統計用戶收藏的類別 → 推薦同類、未收藏過的故事
@@ -48,7 +49,7 @@ export default async function RecommendedStories({
 
   const { data: recs } = await supabase
     .from("novel_stories")
-    .select("id, genre, title, protagonist, content, created_at, story_type")
+    .select("id, genre, title, protagonist, content, created_at, story_type, gen_meta")
     .in("genre", topGenres)
     .not("id", "in", `(${likedIds.join(",")})`)
     .order("created_at", { ascending: false })

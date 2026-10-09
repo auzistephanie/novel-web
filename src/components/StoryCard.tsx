@@ -10,6 +10,7 @@ type Story = {
   content: string;
   created_at: string;
   story_type?: string;
+  gen_meta?: { teaser?: string } | null;
 };
 
 export default function StoryCard({
@@ -21,6 +22,7 @@ export default function StoryCard({
   liked: boolean;
   loggedIn: boolean;
 }) {
+  const teaser = story.gen_meta?.teaser?.trim();
   const excerpt = story.content.slice(0, 90).trim();
   const color = getGenreColor(story.genre);
 
@@ -72,7 +74,7 @@ export default function StoryCard({
       {story.protagonist && (
         <p className="text-xs text-ink/50">主角：{story.protagonist}</p>
       )}
-      <p className="text-sm text-ink/70 line-clamp-3">{excerpt}...</p>
+      <p className="text-sm text-ink/70 line-clamp-3">{teaser ? teaser : `${excerpt}...`}</p>
       <Link
         href={`/story/${story.id}`}
         className="text-sm font-bold text-brick self-start"

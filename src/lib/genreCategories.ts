@@ -111,6 +111,31 @@ export const PARENT_CATEGORIES: ParentCategory[] = [
     genres: ["親情催淚", "溫情反轉", "暗戀成真"],
     color: { bar: "#b06a8a", text: "#9a5675", bg: "rgba(176,106,138,0.1)" }, // 豆沙粉
   },
+  // 2026-10-07 新增 4 條故事線
+  {
+    key: "trend-hook",
+    label: "話題腦洞",
+    genres: ["話題腦洞"],
+    color: { bar: "#d08a1e", text: "#a96d12", bg: "rgba(208,138,30,0.12)" }, // 琥珀橙
+  },
+  {
+    key: "sweet-romcom",
+    label: "甜寵輕喜劇",
+    genres: ["甜寵輕喜劇"],
+    color: { bar: "#d9728a", text: "#b85571", bg: "rgba(217,114,138,0.1)" }, // 櫻桃粉
+  },
+  {
+    key: "cozy-shop",
+    label: "治癒小店",
+    genres: ["治癒小店"],
+    color: { bar: "#6f8f4e", text: "#587439", bg: "rgba(111,143,78,0.12)" }, // 橄欖綠
+  },
+  {
+    key: "reunion",
+    label: "重逢遺憾",
+    genres: ["重逢遺憾"],
+    color: { bar: "#7d6b5d", text: "#675648", bg: "rgba(125,107,93,0.12)" }, // 灰褐
+  },
 ];
 
 const FALLBACK_KEY = "other";

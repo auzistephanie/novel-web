@@ -38,8 +38,8 @@ Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 
 ## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
 
 - `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`。10-04 起 4 條故事線 `LANES`（爽文逆襲＝Hook引擎／黑色幽默／溫情反轉／腦洞奇想），雙稿＋`readerJudge`（含看懂閘門）揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
-  `gen_meta`＝`{lane,hook?,stake?,angle?,premise,form,judge}`。測試：`?dry=1&lane=` 唔寫 DB。詳情見 CHANGELOG 10-04
+- 邏輯全部喺 `route.ts`。10-07 起 8 條故事線 `LANES`（爽文／黑幽默／溫情／腦洞／話題／甜寵／小店／重逢），雙稿＋`readerJudge`（含看懂閘門）揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
+  `gen_meta`＝`{lane,angle?,premise,form,judge,teaser}`。測試：`?dry=1&lane=` 唔寫 DB。詳情見 CHANGELOG 10-07
 - ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
 
 ## 部署狀態

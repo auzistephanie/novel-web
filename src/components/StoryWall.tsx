@@ -12,6 +12,7 @@ type Story = {
   content: string;
   created_at: string;
   story_type?: string;
+  gen_meta?: { teaser?: string } | null;
 };
 
 export default function StoryWall({

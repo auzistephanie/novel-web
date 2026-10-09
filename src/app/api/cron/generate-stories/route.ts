@@ -260,6 +260,8 @@ const COMMON_READ_THROUGH = `
 3. 反轉：全篇主要反轉 2 至 3 個，寧少勿亂。每個反轉之前，前文必須已經埋下讀者看得見的伏筆。禁止靠連串巧合推進——讀者一旦不信，就不會讀到最後。
 4. 段落短：1 至 3 句一段，關鍵句獨立成段，適合手機閱讀。
 5. 結尾最後一句要短、有力、可以獨立截圖傳播。
+6. 設定要簡單：全篇最多一條特殊規則，第一節講清楚；不要多層反轉套多層設定。
+7. 結尾禁止說教或總結人生道理（例如「有時候……」「原來……」式感言）。最後一段必須用畫面或對白收尾，不准升華。
 `;
 
 const COMMON_BANS = `
@@ -274,9 +276,23 @@ ${LANG_RULE}
 - 嚴禁把深情寫成長期監視、偷偷記錄對方一舉一動。
 - 秘密被揭開的方式不可以用「翻舊物、搜到證物、解鎖舊裝置、偷看日記」，要用：當場撞破、第三者講漏嘴、直接對峙、心聲被聽見，或者由前文伏筆自然推出。
 - 嚴禁 AI 陳套：夜幕降臨、不禁、彷彿整個世界、心跳漏了一拍、眼眶泛紅、五味雜陳。
+- 嚴禁命案、兇手、綁架、追殺、警察查案（本站不寫懸疑推理）。可以有誤會、秘密、謊言，但不要有人被殺或失蹤。
+- 嚴禁「買賣／刪除／移植／偷取別人記憶」類設定，也不要用「真假記憶」套娃詭計（讀者看不懂）。
+- 嚴禁嘲笑外貌、體型、年齡、性別或職業的笑點。
+- 嚴禁以寵物或親人的死亡、安樂死、絕症、喪事作為故事核心（太沉重，讀者不想看）。傷感可以有，但整體要讓人想看下去，不是讓人心情down。
+- 嚴禁大段對白交代過去（一個人連續講超過三句回憶）。過去要用物件、場景和短對白帶出。
+- 情節必須在現實中說得通（例如簽名不能「重複使用」、物件不能憑空出現）；不合常理的細節寧可不寫。
 `;
 
-type LaneKey = "shuangwen" | "dark_humor" | "warm_twist" | "high_concept";
+type LaneKey =
+  | "shuangwen"
+  | "dark_humor"
+  | "warm_twist"
+  | "high_concept"
+  | "trend_hook"
+  | "sweet_romcom"
+  | "cozy_shop"
+  | "reunion";
 
 type Lane = {
   key: LaneKey;
@@ -300,6 +316,7 @@ const DARK_HUMOR_STYLE = `
 - 主角要靠自己的歪主意、將計就計或當場拆穿來解決麻煩，不靠別人拯救。
 - 結尾要有一個反轉，把前面的笑點變成一記重擊（笑著笑著發現很心酸，或者爽到拍桌）。
 - 嚴禁過氣網絡梗、嚴禁說教。
+- 嚴禁拿外貌、體型、年齡當笑點；笑點要來自處境和人的行為。
 `;
 
 const WARM_TWIST_STYLE = `
@@ -319,15 +336,51 @@ const HIGH_CONCEPT_STYLE = `
 - 設定要有代價或限制；中段的危機要是規則本身反咬主角。
 - 主角是現代都市的普通人，要用聰明的方法利用規則翻盤，不可以中途新增設定救場。
 - 語氣輕快，節奏明快，對白短而有鋒芒。
-- 奇想是「規則」不是「鬼」：嚴禁鬼怪、靈異、恐怖、血腥。規則只可以改變資訊、運氣、時間、記憶這類東西，嚴禁憑空生出人、分身、複製人、怪物，嚴禁半夜驚嚇場面。
+- 奇想是「規則」不是「鬼」：嚴禁鬼怪、靈異、恐怖、血腥。規則只可以改變資訊、運氣、時間、社會規則這類東西，不准涉及記憶，嚴禁憑空生出人、分身、複製人、怪物，嚴禁半夜驚嚇場面。
 - 結尾要有一個讀者沒想到、但回頭看完全符合規則的反轉。
+`;
+
+const TREND_HOOK_STYLE = `
+【話題腦洞線文風】
+- 抓一個人人有共鳴的現實話題（物價、薪水、運氣、職場、性別處境）＋一條一句話講得完的荒謬設定。
+- 輕快、有笑點，可以用第一人稱或第三人稱；前 100 字內講清楚規則與主角的具體麻煩。
+- 規則只可以改變金錢數字、運氣、社會規則或性別外觀，嚴禁涉及記憶、生死、鬼怪。
+- 性別互換只寫生活與社會處境的反差（別人怎樣對待、日常不便、朋友反應），不准有任何性描寫；雙方均為成年人。
+- 一個荒謬前提，所有後果按規則認真推演；中段規則要反咬主角一次；結尾要有讀者沒想到、但回頭看完全符合規則的反轉。
+`;
+
+const SWEET_ROMCOM_STYLE = `
+【甜寵輕喜劇線文風】
+- 輕快、甜、有笑點。兩位成年人因為一個「不得不互動」的原因綁在一起（假扮情侶、先婚後愛、鄰居、同事、被困）。
+- 走向：誤會或嫌棄 → 被迫靠近 → 一個小危機 → 說開、甜蜜收尾。
+- 每一節都要有一個「心動瞬間」：用動作和細節寫（遞過來的外套、記得對方不吃香菜），不要用內心獨白交代心動。
+- 對白要有火花，互相拆台但藏著在意。
+- 嚴禁虐戀、第三者撕逼、豪門總裁、誤會拖到結尾才解。結局要甜，要落地。
+`;
+
+const COZY_SHOP_STYLE = `
+【治癒小店線文風】
+- 第三人稱，語氣平實溫暖，多用食物、氣味、物件的細節。
+- 一間小店（麵店、花店、舊書店、洗衣店、修鞋攤）＋一位常客或新客＋一個小心願或小秘密。
+- 慢熱但每一節都要有一個小懸念（客人為什麼每週三都來？為什麼只點那一樣？），最後一節揭曉。
+- 淚點與暖點落在被忽略的日常細節，嚴禁大道理、嚴禁絕症與死亡情節。
+- 結尾溫柔、有餘韻，真相要落地。
+`;
+
+const REUNION_STYLE = `
+【重逢遺憾線文風】
+- 人物都是成年人（二十五歲以上）；重逢場景要具體（同學會、機場轉機、喜宴、老房子拆遷前）。
+- 兩人之間有一件當年沒有說開的事，這就是核心問題；前文用物件與細節埋伏筆，最後一節說開。
+- 對白克制，不爭吵，不灑狗血；情緒靠停頓、動作和沒說出口的話。
+- 結局苦中帶甜：說開了，但不一定在一起；要讓人心裡一暖又一酸。
+- 回憶只輕輕帶過，不寫未成年人的戀愛情節。
 `;
 
 const LANES: Lane[] = [
   {
     key: "shuangwen",
     name: "爽文逆襲",
-    weight: 4,
+    weight: 3,
     types: ["short", "serial"],
     genres: [], // 用 Hook 引擎自己嘅 genres
     style: "", // 用 STYLE_2026_SHUANGWEN
@@ -407,20 +460,136 @@ const LANES: Lane[] = [
     angles: [
       "每天早上收到一條來自明天的訊息",
       "能聽見別人說謊時的心跳聲",
-      "可以把一天重來一次，但每重來一次就會忘記一個人",
+      "每週三，全城人的座位和住所會隨機對調一天，只有主角固定不動",
       "看得見每個人頭上顯示的「今天剩餘好運值」",
       "說出口的抱怨會在二十四小時內成真",
       "全城所有人突然有一天只能說真話",
-      "手機多了一個 App，可以撤回自己現實中說過的一句話",
       "每個人的影子會提前三秒做出他下一個動作",
-      "可以花錢買別人的一小時記憶",
-      "每次說「沒事」，身邊的人就會真的忘掉那件事",
-      "每天醒來都會多出一項陌生的技能，同時失去一項舊技能",
+      "全城的鬧鐘同時提早了一小時，只有主角的沒有",
+      "收到一張萬能優惠券，任何店都收，但每個人一生只能用一次",
+      "寵物突然能用手機打字傳訊息，但只肯說真話",
       "能看見每段關係剩下的倒數時間",
     ],
     seeds: [
       "每天早上七點，我會收到一條來自明天的訊息。今天那條只有四個字：別開門，快。",
       "我能聽見別人說謊時的心跳聲。求婚那晚，他單膝跪下說「我愛你」，我聽見他的心跳快得像在逃命。",
+    ],
+  },
+  {
+    key: "trend_hook",
+    name: "話題腦洞",
+    weight: 3,
+    types: ["short", "serial"],
+    genres: ["話題腦洞"],
+    style: TREND_HOOK_STYLE,
+    premiseGuide:
+      "一個現實話題（物價、薪水、運氣、性別處境）＋一條一句話講完的荒謬規則＋主角因此遇上的具體麻煩＋一個讓人想知道「這要怎麼收場」的核心問題。",
+    judgeHint: "規則一句講得清楚，主角已經有具體麻煩；一般人看完會想轉發給朋友說『這也太荒謬了』；不涉及記憶、生死、性描寫",
+    angles: [
+      "全城物價一夜之間降了一半，人人歡呼，但主角的薪水也同步降了一半，錢包一點沒變",
+      "全城人的月薪突然顯示在頭像旁邊，主角成了全公司最尷尬的人",
+      "主角被同事公認是錦鯉體質，所有人排隊來借運，但他自己覺得倒楣透頂",
+      "公司門口的錦鯉池流傳『誰餵魚誰升職』，主角是唯一餵了反而被炒的人",
+      "主角養的錦鯉游向哪邊，他當天的運氣就往哪邊走",
+      "一覺醒來，主角和自己的死對頭互換了性別，而今天剛好是兩人要談合作的日子",
+      "和相親對象一起醒來，發現彼此性別對調，但雙方都不敢告訴對方",
+      "全城所有人一夜之間性別互換，只有主角沒變，因此成了全城唯一『不懂行情』的人",
+      "超市收銀機按顧客今天有多開心來定價，越開心越貴",
+      "收到一張全城通用的萬能優惠券，只能用一次，全城人都在算計怎麼用最划算",
+      "全公司同時收到通知：從明天起，每句說出口的話都要附上理由",
+      "所有店家的價錢一夜之間改成『看你像不像有錢人』，主角被誤認成富豪",
+    ],
+    seeds: [
+      "全城物價一夜降了一半，新聞稱這是史上最大德政。只有我發現，我的薪水也自動降了一半，房租卻一分沒少。",
+      "公司傳出我是錦鯉體質，三個同事排隊跟我握手借運。他們不知道，我今早剛被房東通知要加租三成。",
+      "一覺醒來，我和隔壁那個處處跟我作對的同事互換了性別，而十點鐘，我們要一起上台簡報。",
+    ],
+  },
+  {
+    key: "sweet_romcom",
+    name: "甜寵輕喜劇",
+    weight: 2,
+    types: ["short", "serial"],
+    genres: ["甜寵輕喜劇"],
+    style: SWEET_ROMCOM_STYLE,
+    premiseGuide:
+      "兩位成年人一開局就有一個『不得不互動』的原因＋第一句對白就有火花或笑點＋一個讓人想知道『他們最後會怎樣』的核心問題。",
+    judgeHint: "兩個人一開局就有不得不互動的理由，第一個場面就有火花或笑點，沒有虐戀或第三者",
+    angles: [
+      "因為一次認錯人，被迫假扮情侶去見對方家長",
+      "先登記後見面的閃婚，新婚第一晚才發現對方是自己的死對頭",
+      "鄰居每晚都在牆那邊練習告白台詞，而主角是唯一的聽眾",
+      "同事打賭誰先脫單，兩個輸家被迫互相幫忙",
+      "網購退貨退錯，收到陌生人的一整箱生活用品，順藤摸瓜找到對方",
+      "搬家公司搞錯地址，兩個陌生人被迫同住一個單位一星期",
+      "暗戀的人突然問主角：能不能陪我演一場戲",
+      "每次相親都遇到同一個人",
+      "在朋友婚禮上被迫當伴娘和伴郎，彼此都是被安排的",
+      "電梯故障，兩個互相嫌棄的人被困兩小時",
+      "共享充電寶讓兩個陌生人一再碰面",
+      "前公司的死對頭成了主角的新房東",
+    ],
+    seeds: [
+      "相親才五分鐘，對方的前任衝進餐廳，指著我說：「原來你就是她口中那個比我好的人！」我根本不認識這個人。",
+      "搬家公司把我的紙箱送去了別人家，而別人的沙發，被送進了我的客廳。更慘的是，那個人正拿著我的紙箱站在門口。",
+    ],
+  },
+  {
+    key: "cozy_shop",
+    name: "治癒小店",
+    weight: 2,
+    types: ["short"],
+    genres: ["治癒小店"],
+    style: COZY_SHOP_STYLE,
+    premiseGuide:
+      "一間具體的小店＋一位行為有點特別的客人＋一個藏在店裡日常細節背後、讀者想知道答案的小疑問。",
+    judgeHint: "場景具體（有食物、氣味或物件），客人的行為有一個讓人好奇的小細節，沒有絕症或死亡情節",
+    angles: [
+      "深夜麵店裡，常客每週三都只點一碗不加料的麵",
+      "花店的客人每週買同一束花，卻每次送往不同的地址",
+      "舊書店老闆收到一本寫滿批註的舊書，批註的口吻像在跟他說話",
+      "修鞋攤上，同一個人第三次拿同一雙鞋來修",
+      "麵包店關門前，總有一個人來買最後一個麵包",
+      "租書店歸還的書裡夾著一張寫給下一位讀者的紙條",
+      "自助洗衣店裡，有人每天都洗同一件很小的外套",
+      "糖水舖的老闆記得每位客人的口味，唯獨一位客人從不重複點",
+      "理髮店裡，一位老先生每月來剪一次已經不長的頭髮",
+      "配鑰匙的老師傅，收到一把不屬於任何門的鑰匙",
+      "照相館收到一卷二十年前沒人領的底片",
+      "便利店深夜店員，每晚替同一位客人把熱食多加熱一分鐘",
+    ],
+    seeds: [
+      "巷口麵店的老闆娘每天傍晚六點，會多煮一碗麵放在窗邊。從來沒有人來吃，但那碗麵每天都是空的。",
+      "舊書店新來的夥計發現，店裡每一本書的第十七頁，都夾著同一張被摺得很小的火車票。",
+    ],
+  },
+  {
+    key: "reunion",
+    name: "重逢遺憾",
+    weight: 2,
+    types: ["short"],
+    genres: ["重逢遺憾"],
+    style: REUNION_STYLE,
+    premiseGuide:
+      "兩位成年人在一個具體場景重逢＋一件當年沒有說開的事（用一個物件或一句話暗示）＋一個讓人想知道『當年到底發生了什麼』的核心問題。",
+    judgeHint: "重逢場景具體，開局已暗示當年有一件沒說開的事，兩人都是成年人，不靠狗血爭吵",
+    angles: [
+      "同學會上，對方坐在主角對面，說他從沒收到過那年的那封信",
+      "十年後在機場轉機時重遇前任，兩人的航班都延誤了",
+      "前同事在新公司成了主角的客戶，雙方都假裝不認識",
+      "喜宴上遇到當年沒說出口告白的人，對方是新郎的朋友",
+      "老房子拆遷前回去收拾，遇到了當年的舊鄰居",
+      "兩個曾經的好友斷交十年，在共同恩師的告別式上重逢",
+      "重逢時，對方假裝不認識主角",
+      "同一班飛機、相鄰座位，兩個十年沒聯絡的人",
+      "在異地城市的咖啡店，遇到當年不告而別的人",
+      "舊情人托主角把一樣東西交還給另一個人",
+      "兄弟因為一件舊事不說話十年，被迫一起整理父母的老家",
+      "年少時的搭檔，在同一個比賽現場成了對手",
+    ],
+    seeds: [
+      "同學會的名牌上寫著他的名字。我盯了很久，直到他把一個舊鐵盒放在桌上：「這個，當年你忘了帶走。」",
+      "機場廣播說所有航班延誤。我回頭，看見十年沒見的她，手上提著跟我同一款的行李箱。",
     ],
   },
 ];
@@ -438,6 +607,22 @@ const NARRATIVE_FORMS = [
     instruction: "第一節先寫結局前最緊張的一幕（不揭曉答案），第二節起回到事情開始的時候，最後一節追上第一節並揭曉。",
   },
   { key: "second_person", instruction: "全篇用第二人稱「你」來寫，讓讀者代入主角。" },
+  { key: "third_person", instruction: "全篇用第三人稱（他／她／人名）敘述，不要用「我」做敘述者。" },
+  {
+    key: "letters",
+    instruction:
+      "全篇以書信、留言或信件往來為主體，每封信有稱呼與落款，信與信之間用情節銜接，讓讀者逐步拼出真相；仍然要用單獨一行「＊＊＊」分節。",
+  },
+  {
+    key: "diary",
+    instruction:
+      "全篇以日記體寫成，每則以日期（例如「三月四日　晴」）開頭，語氣私密真實，一則比一則逼近事件核心；仍然要用單獨一行「＊＊＊」分節。",
+  },
+  {
+    key: "interview",
+    instruction:
+      "全篇以訪談或問答紀錄為主體（記者：／受訪者：），穿插少量場景描述，讓真相在問答中一層層揭開；仍然要用單獨一行「＊＊＊」分節。",
+  },
 ];
 
 function pickWeighted<T extends { weight: number }>(arr: T[]): T {
@@ -460,9 +645,16 @@ function pickLane(storyType: StoryType, exclude: Set<LaneKey>): Lane {
 const LANE_FORMS: Record<LaneKey, string[]> = {
   shuangwen: ["normal", "flash_forward", "chat_log"],
   dark_humor: ["normal", "chat_log", "flash_forward"],
-  warm_twist: ["normal", "chat_log", "flash_forward", "second_person"],
-  high_concept: ["normal", "chat_log", "flash_forward", "second_person"],
+  warm_twist: ["normal", "chat_log", "flash_forward", "second_person", "letters", "diary", "third_person"],
+  high_concept: ["normal", "chat_log", "flash_forward", "second_person", "interview", "third_person"],
+  trend_hook: ["normal", "chat_log", "diary", "interview", "third_person"],
+  sweet_romcom: ["normal", "chat_log", "diary", "third_person"],
+  cozy_shop: ["normal", "letters", "third_person"],
+  reunion: ["normal", "letters", "flash_forward", "third_person"],
 };
+
+// A 稿預設一般敘事；非「我」本位嘅線有 40% 機會改用第三人稱，打破「篇篇都係我」
+const THIRD_PERSON_LANES: LaneKey[] = ["warm_twist", "high_concept", "trend_hook", "sweet_romcom", "reunion"];
 
 function pickForm(lane: LaneKey, storyType: StoryType) {
   const keys = LANE_FORMS[lane].filter((k) => k !== "normal" && !(storyType === "serial" && k === "flash_forward"));
@@ -536,6 +728,7 @@ type GenMeta = {
   premise: string;
   form?: string;
   judge?: JudgeRecord[];
+  teaser?: string;
 };
 
 // 排除近期用過嘅 Hook 引擎（10 個引擎，排除最近 5 個 → 保證兩星期內唔會撞同一個 hook）
@@ -613,6 +806,7 @@ function validateTitle(title: string, recentTitles: string[]): string[] {
   const fails: string[] = [];
   fails.push(...shapeFails(title, recentTitles));
   if (!title) fails.push("標題為空");
+  if (title.startsWith("我") && recentTitles.slice(0, 4).some((t) => t.startsWith("我"))) fails.push("近期已有「我」開頭的標題，今次不可以再用");
   if (TITLE_FORMULAIC.test(title)) fails.push("標題formulaic pattern");
   for (const ch of SIMPLIFIED_ONLY) {
     if (title.includes(ch)) fails.push(`簡體字:${ch}`);
@@ -632,9 +826,13 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
   const systemMsg =
     `你是 2026 年爆款短劇與網文的標題大師。請根據故事實際內容，想一個點擊率極高的標題。\n\n` +
     `【標題三要點】\n` +
-    `1. 必須包含強烈衝突、極端反差或懸念對白。要讓人一看就想知道「到底發生甚麼事」。\n` +
-    `2. 標題提到的畫面或情節，必須是全文真實出現過的，不可以編造一個內文沒有的場面。\n` +
-    `3. 字數控制在 8-16 字。\n\n` +
+    `1. 要讓人一看就想知道「到底發生甚麼事」：用強烈衝突、反差或懸念，但「懸念」不等於「劇透」。\n` +
+    `2. 標題提到的畫面或情節，必須是故事中「正在發生、被寫出來」的場面（不是只被角色回憶或轉述的事），不可以編造一個內文沒有的場面。\n` +
+    `3. 字數控制在 8-16 字。\n` +
+    `4. 絕對不可以劇透結局或最後的反轉，只能寫開局與懸念。\n` +
+    `5. 不可以誇大：標題的嚴重程度要和故事實際一致（小事不要寫成「騙局」「陰謀」）。\n` +
+    `6. 不要用行話或專有名詞（例如「感應器」「協議書第三條」），要用一般人一看就懂的詞。\n` +
+    `7. 一次輸出 5 個不同句式的候選標題，每行一個，不要編號、不要解釋；你認為最想點的排第一。\n\n` +
     // 2026-10-04：舊例子「簽下離婚協議那夜…」「替嫁當晚…」令模型篇篇寫「XX那刻/那夜，YY」，已換走。
     `【句式參考（學結構，不要抄內容；每次換一種，不要總是用同一種）】\n` +
     `- 角色最狠的一句對白，例如：叫我一聲老公，這條命給你\n` +
@@ -649,7 +847,7 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
     // 2026-08-19 實測補鑊：出過「她媽的錄音帶，藏著他爸的命」——語意上係「她母親的錄音帶」，
     // 但「她媽的」三個字連讀似粗口，做標題好易俾人誤讀。要明文避開。
     `- 禁止出現會被誤讀成粗話的字組合（例如「她媽的」「他媽的」）。要提到母親一律寫「母親」或「媽媽留下的」，不要用「她媽的X」這種寫法。\n\n` +
-    `只輸出標題本身，不要加引號、解釋或其他文字。`;
+    `只輸出 5 行標題，不要加引號、編號、解釋或其他文字。`;
   let userMsg =
     `以下是故事全文，請根據這個故事的實際內容想一個標題：\n\n${content}\n\n` +
     `近期已用標題（不可以與這些重複或高度相似，句式也要不同）：${recentTitles.join("、") || "無"}`;
@@ -661,15 +859,46 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
         { role: "system", content: systemMsg },
         { role: "user", content: userMsg },
       ],
-      { model: "deepseek-chat", temperature: 0.95, maxTokens: 100, timeoutMs: 40_000 }
+      { model: "deepseek-chat", temperature: 0.95, maxTokens: 300, timeoutMs: 40_000 }
     );
-    const title = raw.trim().replace(/^["「『]+|["」』]+$/g, "");
-    lastTitle = title;
-    const fails = validateTitle(title, recentTitles);
-    if (fails.length === 0) return title;
-    userMsg = `${userMsg}\n\n⚠️上一次個標題「${title}」唔合格，原因：${fails.join("；")}。請重新諗過。`;
+    const cands = raw
+      .split("\n")
+      .map((l) => l.replace(/^\s*(\d+[.、)）]\s*)?/, "").trim().replace(/^["「『]+|["」』]+$/g, ""))
+      .filter((l) => l.length >= 4 && l.length <= 30)
+      .slice(0, 6);
+    if (!lastTitle && cands[0]) lastTitle = cands[0];
+    let firstFails: string[] = [];
+    for (const c of cands) {
+      const fails = validateTitle(c, recentTitles);
+      if (fails.length === 0) return c;
+      if (c === cands[0]) firstFails = fails;
+    }
+    userMsg = `${userMsg}\n\n⚠️上一批候選（${cands.join("／")}）都不合格，第一個的原因：${firstFails.join("；") || "未知"}。請重新想 5 個。`;
   }
   return lastTitle;
+}
+
+// 一句話簡介（顯示喺首頁卡片同故事頁頂）：製造好奇，唔劇透
+async function generateTeaser(content: string, title: string): Promise<string> {
+  try {
+    const raw = await deepseekChat(
+      [
+        {
+          role: "system",
+          content:
+            "你是小說平台的編輯，為故事寫一句話簡介。要求：繁體中文，25 至 45 字；只寫開局和懸念，讓人好奇想看下去；絕對不可以劇透結局或反轉；不要重複標題；不要用省略號；只輸出簡介本身。",
+        },
+        { role: "user", content: `標題：${title}\n\n故事全文：\n${content}` },
+      ],
+      { model: "deepseek-chat", temperature: 0.7, maxTokens: 150, timeoutMs: 30_000 }
+    );
+    const t = raw.trim().replace(/^["「『]+|["」』]+$/g, "").replace(/\n+/g, "");
+    if (t.length < 12 || t.length > 80) return "";
+    if (SIMPLIFIED_ONLY.some((ch) => t.includes(ch))) return "";
+    return t;
+  } catch {
+    return "";
+  }
 }
 
 // 輕量 DeepSeek 自我檢查：closure(short)/cliffhanger(serial) 呢啲要閱讀理解嘅檢查，code 做唔到
@@ -874,7 +1103,7 @@ async function readerJudge(content: string): Promise<ReaderScore | null> {
     `評分要嚴格：普通的故事只值 5-6 分，只有真正讓人停不下來的才給 8 分以上。\n\n` +
     `另外請再做兩項「看不看得懂」檢查（1-10 分，嚴格）：\n` +
     `- open：只看開頭約 300 字，你能不能清楚說出誰在哪裡、發生什麼事、特殊規則是什麼？有未說明的指代（如「那句話」）或一頭霧水就低於 6 分。\n` +
-    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？有明顯矛盾或沒回收就低於 6 分。\n\n` +
+    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？情節在現實中是否說得通（例如簽名可以被重複使用就是不通）？標題講的畫面是否真的在故事裡發生？結尾若出現說教式總結道理、或真相靠翻舊紀錄／證物揭曉、或內容屬命案懸疑、記憶買賣，logic 一律低於 6 分。有明顯矛盾或沒回收也低於 6 分。\n\n` +
     `${insertReadMarks(content)}\n\n` +
     `只輸出 JSON，不要其他文字：{"p25":分數,"p50":分數,"p75":分數,"end":分數,"open":分數,"logic":分數,"issue":"最大的看不懂之處，25 字內","drop":"最可能棄書的位置與原因，20 字內"}`;
   try {
@@ -1096,11 +1325,15 @@ async function generateOne(
     `輸出格式必須是：\n===CONTENT===\n（全文）\n===END===\n不要加任何其他文字或解釋。`;
 
   // ---- 雙稿並行：A 稿一般敘事；B 稿一半機會試其他敘事形式 ----
+  const formA =
+    THIRD_PERSON_LANES.includes(lane.key) && Math.random() < 0.4
+      ? NARRATIVE_FORMS.find((f) => f.key === "third_person") ?? NARRATIVE_FORMS[0]
+      : NARRATIVE_FORMS[0];
   const formB = Math.random() < 0.5 ? pickForm(lane.key, storyType) : NARRATIVE_FORMS[0];
   const deadline = t0 + 110_000; // 過咗呢個時間就唔重寫（長文一次要 2-3 分鐘）
   const hardEnd = t0 + 215_000; // 單次生成最遲收尾時間，留 ~80 秒俾評分＋標題
   const draftResults = await Promise.allSettled([
-    writeDraft(systemMsg, baseUserMsg, storyType, NARRATIVE_FORMS[0], 1.0, deadline, hardEnd),
+    writeDraft(systemMsg, baseUserMsg, storyType, formA, 1.0, deadline, hardEnd),
     writeDraft(systemMsg, baseUserMsg, storyType, formB, 1.1, deadline, hardEnd),
   ]);
   const drafts = draftResults
@@ -1116,23 +1349,32 @@ async function generateOne(
   const scores = await Promise.all(drafts.map((d) => readerJudge(d.content)));
   drafts.forEach((d, i) => (d.score = scores[i]));
   // 睇唔睇得明：open／logic 任何一項 <6 視為「看不懂」。優先揀看得懂＋過驗收，再揀分高。
-  const clear = (d: Draft) => !d.score || (d.score.open >= 6 && d.score.logic >= 6);
+  const clear = (d: Draft) => !d.score || (d.score.open >= 6 && d.score.logic >= 5);
   // 簡體字稿件絕對唔可以發佈（validate 失敗但仍會被保底揀中嘅話，會直接上線）
-  const usable = (d: Draft) => clear(d) && !d.validateNote.includes("簡體字");
+  const minUsableLen = storyType === "serial" ? 3000 : 2200; // 低過呢個先當太短排除（目標下限 3600／2600 靠 repair 補）
+  const usable = (d: Draft) => clear(d) && !d.validateNote.includes("簡體字") && d.content.length >= minUsableLen;
   let ranked = drafts
     .filter(usable)
-    .sort((a, b) => Number(b.pass) - Number(a.pass) || (b.score?.total ?? -1) - (a.score?.total ?? -1));
-  if (ranked.length === 0 && Date.now() < t0 + 150_000) {
-    // 兩稿都唔可用：喺最高分（冇簡體字）嗰稿上按編輯意見修一次
-    const base = drafts
+    .sort(
+      (a, b) =>
+        Number(b.pass) - Number(a.pass) ||
+        (b.score ? b.score.total + b.score.logic : -1) + (b.form.startsWith("normal") ? 0 : 1.5) -
+          ((a.score ? a.score.total + a.score.logic : -1) + (a.form.startsWith("normal") ? 0 : 1.5))
+    );
+  if (ranked.length === 0) {
+    // 兩稿都唔可用：喺最高分（冇簡體字）嗰稿上按編輯意見修，最多兩輪（每輪約 40-60 秒）
+    let cur = drafts
       .filter((d) => !d.validateNote.includes("簡體字"))
       .sort((a, b) => (b.score?.total ?? -1) - (a.score?.total ?? -1))[0];
-    if (base) {
-      const fixed = await repairDraft(systemMsg, base, storyType, t0 + 235_000);
-      if (fixed && usable(fixed) && fixed.pass) {
-        drafts.push(fixed);
+    for (let round = 0; round < 2 && cur && Date.now() < t0 + 170_000; round++) {
+      const fixed = await repairDraft(systemMsg, cur, storyType, t0 + 250_000);
+      if (!fixed) break;
+      drafts.push(fixed);
+      if (usable(fixed)) {
         ranked = [fixed];
+        break;
       }
+      cur = fixed.validateNote.includes("簡體字") ? cur : fixed;
     }
   }
   const best = ranked[0];
@@ -1160,6 +1402,10 @@ async function generateOne(
   }));
 
   const title = await generateTitle(best.content, recentTitles, t0 + 275_000);
+  if (Date.now() < t0 + 270_000) {
+    const teaser = await generateTeaser(best.content, title);
+    if (teaser) genMeta.teaser = teaser;
+  }
 
   return {
     genre,

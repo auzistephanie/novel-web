@@ -8,11 +8,12 @@ export type Story = {
   content: string;
   created_at: string;
   story_type?: string;
+  gen_meta?: { teaser?: string } | null;
 };
 
 // 共用 select 欄位
 export const COLS =
-  "id, genre, title, protagonist, content, created_at, story_type";
+  "id, genre, title, protagonist, content, created_at, story_type, gen_meta";
 
 // 共用：取得 supabase client、目前用戶、佢收藏過嘅 story ids
 export async function loadContext() {

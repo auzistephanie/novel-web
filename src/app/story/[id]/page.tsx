@@ -1,3 +1,4 @@
+import NextReads from "@/components/NextReads";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LikeButton from "@/components/LikeButton";
@@ -73,6 +74,11 @@ export default async function StoryPage({
         <h1 className="font-serif font-black text-2xl leading-snug mt-4">
           {story.title}
         </h1>
+        {(story.gen_meta as { teaser?: string } | null)?.teaser && (
+          <p className="mt-3 text-base text-ink/70 leading-relaxed border-l-4 border-brick/40 pl-3">
+            {(story.gen_meta as { teaser?: string }).teaser}
+          </p>
+        )}
         {story.protagonist && (
           <p className="text-sm text-ink/50 mt-1">主角：{story.protagonist}</p>
         )}
@@ -99,6 +105,8 @@ export default async function StoryPage({
           />
         </div>
       )}
+
+      <NextReads currentId={story.id} genre={story.genre} />
     </main>
   );
 }
