@@ -279,7 +279,7 @@ ${LANG_RULE}
 - 情節必須在現實中說得通（例如簽名不能「重複使用」、物件不能憑空出現）；不合常理的細節寧可不寫。
 `;
 
-// 爽文法則嘅【絕對禁忌】已抽走，改掛 SHARED_BANS（正向寫作在前、禁區在後）。
+// 爽文法則不再自帶禁忌清單，改掛 SHARED_BANS（正向寫作在前、禁區在後）。
 const STYLE_2026_SHUANGWEN = `${STYLE_2026_HEAD}
 ${SHARED_BANS}
 ${STYLE_2026_TAIL}`;
@@ -801,8 +801,8 @@ function classifyValidateFail(note: string): FailType {
   if (note.startsWith("粵語")) return "CANTONESE";
   if (note.startsWith("AI陳套")) return "CLICHE";
   if (note.startsWith("商戰")) return "BUSINESS_WAR";
-  if (note.includes("沒有完整收尾") || note.includes("冇完整收尾")) return "CLOSURE_SHORT";
-  if (note.includes("沒有停在抉擇") || note.includes("冇停")) return "CLOSURE_SERIAL";
+  if (note.includes("沒有完整收尾")) return "CLOSURE_SHORT";
+  if (note.includes("沒有停在抉擇")) return "CLOSURE_SERIAL";
   if (note.startsWith("開頭") || note.includes("看不懂")) return "OPEN";
   if (note.startsWith("邏輯")) return "LOGIC";
   return "OTHER";
@@ -1376,11 +1376,11 @@ async function generateOne(
 
     let priorFail: FailHit | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const p = await generatePremise(hook, stake, heroineName, heroName, recentPremises, priorFail).catch(() => "");
+      const p: string = await generatePremise(hook, stake, heroineName, heroName, recentPremises, priorFail).catch(() => "");
       if (!p) continue;
       premise = p;
       // 商戰詞喺 premise 層就要攔（正文層攔唔到，因為 retry 會用返同一個 premise）
-      const bizHit = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
+      const bizHit: string | undefined = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
       if (bizHit) {
         premiseNote = `premise撞商戰詞(${bizHit})`;
         priorFail = { failType: "BUSINESS_WAR", reason: `開局出現商戰詞「${bizHit}」，必須改成人與人之間的衝突` };
@@ -1413,10 +1413,10 @@ async function generateOne(
 
     let priorFail: FailHit | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const p = await generateLanePremise(lane, angle, `${mainName}、${sideName}`, recentPremises, priorFail).catch(() => "");
+      const p: string = await generateLanePremise(lane, angle, `${mainName}、${sideName}`, recentPremises, priorFail).catch(() => "");
       if (!p) continue;
       premise = p;
-      const bizHit = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
+      const bizHit: string | undefined = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
       if (bizHit) {
         premiseNote = `premise撞商戰詞(${bizHit})`;
         priorFail = { failType: "BUSINESS_WAR", reason: `開局出現商戰詞「${bizHit}」，必須改成人與人之間的衝突` };
