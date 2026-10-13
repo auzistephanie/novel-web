@@ -1,5 +1,11 @@
 # 改版歷史
 
+- **2026-10-13**：**daily-novel 併入本 repo 嘅 `pipeline/`，git 歷史保留** 起因：網站同 Python pipeline 分兩個 repo，改動記錄寫喺 daily-novel、產品 code 喺 novel-web。Owner 批准用 `git filter-repo --to-subdirectory-filter pipeline`，再喺新分支 `git merge --allow-unrelated-histories`。**冇** merge 落 `main`、**冇** 部署、**冇** 刪／封存公開 repo `auzistephanie/daily-novel`、**冇** 推 tag。
+  **搬入 `pipeline/`**：`shortdrama/`、`videoclip/`、`docs/SYSTEMS.md`、`requirements.txt`，以及改寫前嘅全部 commit（filter-repo 會改 SHA，因為每條 path 加咗 `pipeline/` 前綴；commit message 同檔案內容跟得返）。`CHANGELOG.md` 由 `pipeline/` 搬到 repo 根。
+  **刪（工作樹；舊 commit 仍在）**：同根目錄逐 byte 相同嘅 `pipeline/AGENTS.md`、`pipeline/scripts/github_push.py`；`pipeline/CLAUDE.md` 併入根 `CLAUDE.md`；暫存 `_tmp_story1.txt`–`_tmp_story3.txt`、`pipeline/novel_draft_1.txt`–`3.txt`；已停用 `push-novel-web.sh`。
+  **其他**：`.gitignore` 拆走 `novel-web/`，補 `__pycache__/`、`*.py[cod]`、`stories/`、`genre_data.json`、`*.log`、`.venv/`、`novel_draft_*.txt`；`.env*`（除 `.env.example`）任何深度都 ignore。本機路徑記 `~/dev/novel-web`。Python script 冇 `~/daily-novel` 或 `../novel-web` 路徑要改（都係 `Path(__file__)` 相對自己個 folder）。
+  **人手**：Vercel Ignored Build Step；merge 之後 re-clone 去 `~/dev/novel-web`。詳見 README。
+
 - **2026-10-07**：**novel-web 加 4 條新故事線＋標題／簡介／下一篇＋審稿再收緊** 起因：Stephanie 話質素有改進但想「更吸引人睇落去」同「種類更多」，並點名唔鍾意 10/04–10/07 四篇（《我拆了限重感應器…》《我花錢買回的記憶…》《獸醫問家屬簽名…》《他念出我名字那刻，我投影了那條訊息》）；指定想要題材：物價下降但錢包不變、鯉魚（錦鯉）、性別互換。
   **診斷四篇**：標題劇透／誇大／講咗內文冇真正發生嘅畫面；揭秘靠翻舊紀錄（已禁）；記憶買賣＋命案兇手（實質係懸疑推理，Stephanie 早已剔走）；寵物安樂死太沉重；大段對白交代過去；「簽名重複使用」等現實唔通設定；結尾說教；連載只有 2,757／3,111 字仍放行（長度失敗只係 pass=false，仍可被揀中）。
   **修**（`route.ts`、`genreCategories.ts`、`StoryCard`、`NextReads`、story 頁）：① 新增 4 條線：話題腦洞（物價／錦鯉／性別互換等 12 個切入點）、甜寵輕喜劇、治癒小店（short）、重逢遺憾（short）；爽文權重 4→3；腦洞線剷走 4 個記憶類切入點並禁記憶。② `COMMON_BANS` 加：禁命案／兇手／綁架／警察查案、禁記憶買賣、禁嘲笑外貌體型、禁寵物親人死亡做核心、禁大段對白交代過去、情節要現實說得通；`COMMON_READ_THROUGH` 加「最多一條特殊規則」「結尾禁說教」。③ 標題一次出 5 個候選揀第一個合格；加禁劇透、禁誇大、禁行話、標題畫面要係「正在發生」嘅場面；近 4 篇有「我」開頭就唔准再用。④ 新 `generateTeaser()`：一句話簡介存 `gen_meta.teaser`，首頁／分類卡片同故事頁頂顯示；新 `NextReads`：讀完後推薦 3 篇（1 篇同類＋其他）。⑤ 文體輪換：新增 third_person／letters／diary／interview，非「我」線 40% 機率 A 稿用第三人稱，非 normal 稿評分 +1.5 加權。⑥ 排除規則：看不懂（open<6 或 logic<5）、簡體字、長度低過 3,000（serial）／2,200（short）就唔可用；兩稿都唔可用最多修兩輪，仍唔得就當日該篇唔發佈。judge 的 logic 加查「現實說得通」「標題畫面有冇發生」「結尾說教／翻舊紀錄揭秘／命案／記憶買賣＝低於 6」。

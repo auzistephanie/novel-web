@@ -1,6 +1,6 @@
 # CLAUDE.md — videoclip（免費短片 pipeline）
 
-由 daily-novel/novel-web 現有文字故事庫（Supabase `novel_stories`）做劇本源頭，轉做**全免費**短片（旁白＋AI 圖＋Ken Burns 運鏡）嘅子系統。2026-07-23 開設，同 `shortdrama/`（fal.ai 收費短劇）平行——videoclip 係零成本版，shortdrama 係課金真·圖生片版。獨立 subfolder，跟 daily-novel repo 一齊 push。
+由網站「顧事」嘅文字故事庫（Supabase `novel_stories`）做劇本源頭，轉做**全免費**短片（旁白＋AI 圖＋Ken Burns 運鏡）嘅子系統。2026-07-23 開設，同 `shortdrama/`（fal.ai 收費短劇）平行——videoclip 係零成本版，shortdrama 係課金真·圖生片版。而家喺 `~/dev/novel-web/pipeline/videoclip/`，同網站同一個 git。
 
 ## 同 shortdrama 分別
 
@@ -34,7 +34,7 @@ pip install -r requirements.txt   # edge-tts + mutagen + python-dotenv
 brew install ffmpeg               # assemble.py 需要;要 Noto Sans CJK/PingFang 字型燒字幕
 ```
 
-`.env` 要有 `CF_ACCOUNT_ID` + `CF_API_TOKEN`（gitignored，同 daily-novel 根 `.env` 分開）。
+`.env` 要有 `CF_ACCOUNT_ID` + `CF_API_TOKEN`（gitignored，同 repo 根 `.env` 分開）。
 
 ## 資料來源
 
@@ -48,4 +48,4 @@ brew install ffmpeg               # assemble.py 需要;要 Noto Sans CJK/PingFan
 
 ## 推送
 
-跟 daily-novel 根目錄 `github_push.py`，冇獨立 push 機制。`output/` 同 `.env` 已 gitignore。
+跟 repo 根 `scripts/github_push.py`，冇獨立 push 機制。`output/` 同 `.env` 已 gitignore。

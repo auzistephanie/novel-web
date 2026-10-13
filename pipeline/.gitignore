@@ -1,8 +1,13 @@
-# 敏感設定
-.env
+# 2026-10-13：daily-novel 併入 novel-web 之後，ignore 規則以 repo 根 .gitignore 為準。
+# 已拆走舊嘅 `novel-web/` 排除（網站而家就係呢個 repo）。
+# .env*（除 .env.example）、__pycache__/、*.py[cod]、.venv/、stories/、genre_data.json、*.log
+# 都喺根目錄生效，任何深度都 cover。
 
 # 生成故事存檔（體積大，唔需要版本控制）
 stories/
+
+# 本地小說草稿（novel_draft_1.txt 等；唔 commit）
+novel_draft_*.txt
 
 # 評分與類別記憶（本地狀態，唔 commit）
 genre_data.json
@@ -25,28 +30,23 @@ trending_cache.json
 __pycache__/
 *.py[cod]
 *.pyo
+.venv/
 .DS_Store
 
-# Build artifacts（本機生成，Drive Mirror 佔位，永唔推 GitHub）
-# node_modules（462MB）、.next（17MB）已 2026-08-16 清走；開發前要 npm install
-# 詳見 novel-web/README.md
+# Build artifacts（本機生成，永唔推 GitHub）
 node_modules/
 .next/
-
-# novel-web 係獨立 project（自己 git repo + 自己 GitHub repo），唔屬於 daily-novel 版本控制
-novel-web/
 
 # staged-for-deletion (never push)
 _to_delete/
 
-# session-lock.sh 嘅鎖檔（Drive mount rm 唔到會改名做 .DELETE-ME-*，兩種都唔好推上 GitHub）
+# session-lock.sh 嘅鎖檔
 .active-session.lock*
 
-# 備份檔一律入 _to_delete/（06-STANDARDS §S3, 2026-07-31）；呢條係第二道防線，漏咗 mv 都唔會誤推上 GitHub
+# 備份檔一律入 _to_delete/
 *.bak-*
 
-# Google Drive Mirror 衝突副本（兩機並行時 Drive 會自動整多份 "xxx (1).ext"）
-# 一律唔准推上 GitHub（2026-08-16 加，10 個副本曾差啲夾帶）
+# Google Drive Mirror 衝突副本
 * (1)*
 * (2)*
 * (3)*

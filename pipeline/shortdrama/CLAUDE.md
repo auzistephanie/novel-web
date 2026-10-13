@@ -1,6 +1,6 @@
 # CLAUDE.md — shortdrama（短劇 video pipeline）
 
-由 daily-novel/novel-web 現有文字故事庫（Supabase `novel_stories`）做劇本源頭,轉做AI生成短劇video嘅子系統。2026-07-17 開設,唔屬於novel-web嘅git版本控制範圍(獨立subfolder,跟daily-novel repo一齊push)。
+由網站「顧事」嘅文字故事庫（Supabase `novel_stories`）做劇本源頭,轉做AI生成短劇video嘅子系統。2026-07-17 開設。而家喺 `~/dev/novel-web/pipeline/shortdrama/`，同網站同一個 git。
 
 ## 流程
 
@@ -21,7 +21,7 @@ pip install -r requirements.txt   # fal-client + python-dotenv
 brew install ffmpeg               # assemble.py 需要
 ```
 
-`.env` 要有 `FAL_KEY`(fal.ai API key,gitignored,同daily-novel根目錄嘅.env分開)。
+`.env` 要有 `FAL_KEY`(fal.ai API key,gitignored,同 repo 根 `.env` 分開)。
 
 ## 資料來源
 
@@ -29,4 +29,4 @@ brew install ffmpeg               # assemble.py 需要
 
 ## 推送
 
-跟daily-novel根目錄`github_push.py`,冇獨立push機制。`output/`同`.env`已gitignore,唔會上repo(片太大)。
+跟 repo 根 `scripts/github_push.py`,冇獨立push機制。`output/`同`.env`已gitignore,唔會上repo(片太大)。
