@@ -1,0 +1,53 @@
+# 2026-10-13：daily-novel 併入 novel-web 之後，ignore 規則以 repo 根 .gitignore 為準。
+# 已拆走舊嘅 `novel-web/` 排除（網站而家就係呢個 repo）。
+# .env*（除 .env.example）、__pycache__/、*.py[cod]、.venv/、stories/、genre_data.json、*.log
+# 都喺根目錄生效，任何深度都 cover。
+
+# 生成故事存檔（體積大，唔需要版本控制）
+stories/
+
+# 本地小說草稿（novel_draft_1.txt 等；唔 commit）
+novel_draft_*.txt
+
+# 評分與類別記憶（本地狀態，唔 commit）
+genre_data.json
+
+# 日誌
+*.log
+
+# Phase 1 驗證用 scratch（唔 commit）
+_verify*
+_vstate*.json
+_vsid*.txt
+_p2*
+_q*
+_e2*
+_coh*
+trending_cache.json
+.error_check_state
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.DS_Store
+
+# Build artifacts（本機生成，永唔推 GitHub）
+node_modules/
+.next/
+
+# staged-for-deletion (never push)
+_to_delete/
+
+# session-lock.sh 嘅鎖檔
+.active-session.lock*
+
+# 備份檔一律入 _to_delete/
+*.bak-*
+
+# Google Drive Mirror 衝突副本
+* (1)*
+* (2)*
+* (3)*
+*conflicted copy*

@@ -1,61 +1,44 @@
 # CLAUDE.md — 顧事 novel-web
 
-由 `daily-novel`（Telegram bot 版）獨立分拆出嚟嘅網站產品。唔再推 Telegram，改做正式登入網站：故事牆、㩒鍾意、AI 定時生成個人化結局。改名／視覺／內容分流嘅決策史 → daily-novel `CHANGELOG.md`（2026-07-05 起數條）。
+本 repo 喺 `~/dev/novel-web`：網站「顧事」同 Python pipeline 同一個 git。舊 Telegram bot 已於 2026-07-11 刪走（翻查睇 git 歷史）。改版史 → 根目錄 `CHANGELOG.md`。
 
-## ⚙️ Standards（MANDATORY — 正本：`stephanie-personal/docs/ai-governance/06-STANDARDS.md`，改規則只改正本）
+## ⚙️ Standards（MANDATORY — 正本：`stephanie-personal/docs/ai-governance/STANDARDS.md`，改規則只改正本）
 
-Push（`github_push.py`，永不 git CLI・HTTPS・一 run 一 commit・**開工前 `--check`**・**收工即推**・三道閘 刪檔／SHA／交叉 review，撞閘唔好即刻 `--force`）・寫入分流（改動記錄 → `CHANGELOG.md` **頂部**；本檔上限 100 行/6KB）・清理 mv `_to_delete/`・方向性決定先 preview（02 §R3）・改完以用家身份 run 一次先報完成・governance 00–06（派工 01 §1＋03 模板；完成前過 02 §R2；冇 mount stephanie-personal 就叫 Stephanie 連埋）。**Codex 讀同層 `AGENTS.md`**。詳文＋例外表 → 正本。
+Push（`python3 scripts/github_push.py`，由 repo 根跑；永不 git CLI・HTTPS・一 run 一 commit・**開工前 `--check`**・**收工即推**・閘 1 刪檔／閘 2 SHA，撞閘唔好即刻 `--force`）・寫入分流（改動記錄 → `CHANGELOG.md` **頂部**；本檔上限 100 行/6KB）・清理 mv `_to_delete/`・方向性決定先 preview（STANDARDS §S3）・改完以用家身份 run 一次先報完成・governance DIAGNOSIS+STANDARDS（完成前過 STANDARDS §S2；冇 mount stephanie-personal 就叫 Stephanie 連埋）。**Codex 讀同層 `AGENTS.md`**。詳文＋例外表 → 正本。
 
-> 內容系統詳解拆咗落 `docs/SYSTEMS.md`，按需 read_file。
+> 內容系統（bot 年代參考）→ `pipeline/docs/SYSTEMS.md`。
 
-> ⚠️ 巢狀 repo：改動記錄寫 **parent** `daily-novel/CHANGELOG.md` 頂部，唔係本目錄。其餘分流跟上面 ⚙️ Standards。
+## 網站（Next.js，`src/`）
 
-## 架構
+Next.js 16（App Router + TypeScript + Tailwind v4）。Supabase `cmtubaxlniglklmdwlzs`（同 trips 共用，`novel_` 前綴）：`novel_stories` 公開讀，DELETE 淨限 admin email；`novel_likes`／`novel_endings` RLS 淨本人，FK `ON DELETE CASCADE`。故事寫入用 `SUPABASE_SERVICE_ROLE_KEY`；結局用 `src/lib/deepseek.ts`。
 
-- Next.js 16（App Router + TypeScript + Tailwind v4），scaffold 喺 `src/`
-- Supabase（project `cmtubaxlniglklmdwlzs`，同 trips app 共用，table 用 `novel_` 前綴分隔）：
-  - `novel_stories` — 故事本體，公開讀；DELETE 淨限 admin email（見下面 `/admin`）
-  - `novel_likes` — user 鍾意記錄，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
-  - `novel_endings` — AI 生成嘅個人化結局，RLS 淨本人；FK `ON DELETE CASCADE` 跟 `novel_stories`
-- 故事生成／寫入用 `SUPABASE_SERVICE_ROLE_KEY`（Vercel env，見下「Scheduled generation」）；結局用 app 自己嘅 DeepSeek key（見下）；刪除故事靠 RLS policy，唔使 service-role key
+頁面：`/login` · `/`（短篇＋連載，各自 genre 篩選）· `/story/[id]` · `/my-endings`（`EndingBookshelf.tsx`，唔好喺 `page.tsx` 加 inline timeline）· `/admin`（淨 `auzistephanie@gmail.com`，`src/lib/admin.ts`）。Nav：`src/components/NavBar.tsx`。
 
-## 頁面
+`story_type`：`serial`（3600–8000字，停喺抉擇）／`short`（2600–5000字，有頭有尾）。**short 唔生成專屬結局**。House Style 見 `src/app/api/cron/generate-stories/route.ts` 嘅 `STYLE_2026`／`SERIAL_STRUCTURE`／`SHORT_STRUCTURE`。
 
-`/login`（Supabase Auth）· `/`（首頁，「短篇故事」＋「每日連載」兩個 section，各自獨立 genre 篩選）· `/story/[id]`（全文＋結局）· `/my-endings`（我的結局本，登入後先見，`EndingBookshelf.tsx` 書脊格仔版面，改呢個元件唔好喺 `page.tsx` 加返 inline timeline）· `/admin`（故事列表＋刪除，淨 `auzistephanie@gmail.com` login 見到，`src/lib/admin.ts` 白名單；DELETE RLS policy 淨限 admin email，`novel_likes`／`novel_endings` cascade 自動清）
+結局：`EndingFlow.tsx` → `getChoices` → `generateEnding`（400–700字，insert 唔 upsert）。
 
-Side menu：桌面版左側直向，手機版收做頂部橫向 bar。組件係 `src/components/NavBar.tsx`。
+Cron：`vercel.json` `"30 4 * * *"`（HKT 12:30）每日 1 serial + 1 short。8 條 `LANES`，雙稿＋`readerJudge`；`＊＊＊` 分節。`gen_meta`＝`{lane,angle?,premise,form,judge,teaser}`。`?dry=1&lane=` 唔寫 DB。舊 skill `novel-story-generator` 已死，改 `route.ts`。
 
-## 內容型態（story_type）
+上線：https://novel-web-sepia.vercel.app 。`dependencies` 唔可以有 `@next/swc-linux-*-gnu`／`lightningcss-*`。
 
-`novel_stories.story_type`：`serial`（連載，3600-8000字，停喺抉擇/未揭曉節點）／`short`（完整短篇，2600-5000字，有頭有尾）。首頁按呢個欄位分兩個 section。House Style／字數／收尾規定嘅詳細字眼見 `src/app/api/cron/generate-stories/route.ts` 嘅 `STYLE_2026`／`SERIAL_STRUCTURE`／`SHORT_STRUCTURE` 常數。
+品牌：花磚（靛藍＋酒紅 `#7a3b32`）／`public/hero-cat.png`（換圖前確認授權）／`--color-cream` `#f6efe0`。花磚淨用大面積；nav／pills 用素色。
 
-⚠️ `short` 故事已經有齊結局，**唔應該**再生成「專屬結局」——`story` 詳情頁對 `short` 故事顯示唔同文案（冇結局生成 flow）。
+## Python（`pipeline/`）
 
-## 結局生成（DeepSeek，即時）
+- `pipeline/shortdrama/` — fal.ai 圖生片。見 `pipeline/shortdrama/CLAUDE.md`
+- `pipeline/videoclip/` — 免費短片（AI 圖＋Ken Burns＋EdgeTTS）。見 `pipeline/videoclip/CLAUDE.md`
+- 依賴：`pipeline/requirements.txt`，以及上面兩個子目錄自己嘅 `requirements.txt`
+- 只得一份 push script：根目錄 `scripts/github_push.py`（`REPO`＝本 repo 根）
 
-讀者揀完連載故事 → `EndingFlow.tsx` 叫 `src/app/actions/endings.ts::getChoices`（DeepSeek 即場生成 3 個劇情分支）→ 揀一個 → `generateEnding`（DeepSeek 生成 400–700 字專屬結局，insert 入 `novel_endings`）。全程用 `src/lib/deepseek.ts` 嘅 key，冇經 Cowork Supabase MCP 寫入。同一故事可以生成多個結局（唔同分支），insert 唔 upsert。
+## 完成前
 
-## Scheduled generation（Vercel Cron，2026-08-01 起唔再靠 Cowork scheduled task）
-
-- `vercel.json` cron `"30 4 * * *"`（UTC = HKT 12:30）打 `GET /api/cron/generate-stories`，**每日一次，1 serial + 1 short**
-- 邏輯全部喺 `route.ts`。10-07 起 8 條故事線 `LANES`（爽文／黑幽默／溫情／腦洞／話題／甜寵／小店／重逢），雙稿＋`readerJudge`（含看懂閘門）揀優；單獨一行 `＊＊＊` 分節（`StoryReader.tsx` 用）。
-  `gen_meta`＝`{lane,angle?,premise,form,judge,teaser}`。測試：`?dry=1&lane=` 唔寫 DB。詳情見 CHANGELOG 10-07
-- ⚠️ 舊 Cowork skill／scheduled task `novel-story-generator` 係死殘留，改嗰份文件唔會生效——要改呢個 route.ts
-
-## 部署狀態
-
-已上線：**https://novel-web-sepia.vercel.app**（Vercel project `novel-web`，接 GitHub main branch，push 自動 redeploy）。
-
-⚠️ `package.json` 嘅 `dependencies` 唔可以出現 `@next/swc-linux-*-gnu` / `lightningcss-*` 呢類平台專用 optional binary package（唔同 CPU 架構 build 機必撞 `EBADPLATFORM`）。
-
-## 品牌／視覺
-
-App 名「顧事」；花磚（雙層菱格紋，靛藍＋酒紅 `#7a3b32`）／Hero 插畫 `public/hero-cat.png`（換圖前確認授權）／配色 `--background` 白、`--color-cream` `#f6efe0`。定案史 → daily-novel `CHANGELOG.md` 2026-07-05。設計原則：花磚圖案淨用喺大面積背景／分隔帶，nav／filter pills 呢類窄小 UI 一律用素色/細線裝飾。
+1. 改網站 → `npm run build` 實際行一次
+2. 改 `pipeline/` script → 實跑一次貼 output
+3. Push：`python3 scripts/github_push.py "<msg>"` ＋核實 GitHub HEAD
 
 ## 開發須知
 
-- `npm install` 要喺你自己電腦本機跑（唔好喺 Cowork sandbox 嘅 mounted folder 度跑 —— FUSE bridge 對大量細檔嘅 node_modules 唔穩定，會有 EPERM/Bus error）
-- `.env.local` 已經有真實 Supabase URL/anon key／DeepSeek key（gitignored，唔喺 repo 度）；`.env` 有 `GITHUB_TOKEN`（同樣 gitignored）
-- ⚠️ **本 repo 獨立推**（推 daily-novel 唔會連佢一齊）：Cowork **container** 跑會撞 `403 not enabled for this session`（sandbox 擋 api.github.com）→ 經 `desktop-commander` 喺真 Mac 跑就冇事（07-31 實測 `c319031`）。
-- ⚠️ **Cowork sandbox 唔好直接喺 mounted folder 度 `git commit`/`git fetch`**：FUSE bridge 對 `.git` 內部寫入會報 `Operation not permitted`，令 `.git/index` 近乎空白。雲端要驗證改動時：喺 sandbox `/tmp` fresh clone → 複製改動檔案落去 → 喺嗰度跑 build 驗證，唔好郁 mounted folder 嘅 `.git`。
-
+- `npm install` 喺本機跑（Cowork FUSE 對 `node_modules` 唔穩）
+- `.env.local`：Supabase URL／anon／DeepSeek；`.env`：`GITHUB_TOKEN`（gitignored）
+- Cowork sandbox 唔好喺 mounted folder `git commit`／`git fetch`

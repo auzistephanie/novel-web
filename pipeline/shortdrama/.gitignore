@@ -1,0 +1,5 @@
+output/
+.env*
+!.env.example
+*.mp4
+concat_list.txt

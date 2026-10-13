@@ -1,60 +1,75 @@
 # 顧事 — novel-web
 
-每日一頁，爽到停唔到。AI 生成中文網絡爽文嘅網站版：登入、睇故事、㩒鍾意，AI 定時幫你生成個人化結局。
+本 repo 喺 `~/dev/novel-web`，有兩部分：
 
-呢個 project 同 `daily-novel`（Telegram bot 版）獨立分開，唔再推 Telegram。
+1. **網站「顧事」**（repo 根，`src/`）— 登入、睇中文網絡小說、㩒鍾意；連載可以親手揀專屬結局
+2. **Python pipeline**（`pipeline/`）— 短劇同免費短片。舊 Telegram bot 已於 2026-07-11 移除，程式唔再喺樹入面（歷史用 `git log` 翻）
 
-## 架構
+## 網站
 
 - **Next.js 16**（App Router + TypeScript + Tailwind v4）
-- **Supabase**：Auth（email/password）+ Postgres（`novel_stories` / `novel_likes` / `novel_endings`，`novel_` 前綴，同其他 project 共用一個 Supabase project）
-- **Cowork scheduled tasks**：由 Claude 定時生成故事同個人化結局，直接寫入 Supabase（唔經任何自建 API/key）
-- **Vercel**：部署（見下面「部署」一節）
-
-## 頁面
+- **Supabase**：Auth（email/password）+ Postgres（`novel_stories` / `novel_likes` / `novel_endings`）
+- **Vercel Cron**：每日 HKT 12:30 生成 1 篇連載 + 1 篇短篇（`GET /api/cron/generate-stories`）
+- **DeepSeek**：讀者為連載揀分支，即時生成專屬結局。短篇已經有完結，唔再生成結局
 
 | 路徑 | 說明 |
 |---|---|
-| `/login` | 登入／註冊（Supabase Auth） |
-| `/` | 故事牆，可以㩒鍾意 |
-| `/story/[id]` | 故事全文＋鍾意狀態＋專屬結局（如有） |
-| `/my-endings` | 登入後先睇到，自己嘅個人化結局清單 |
+| `/login` | 登入／註冊 |
+| `/` | 首頁：短篇故事＋每日連載 |
+| `/story/[id]` | 全文；連載可以揀結局 |
+| `/my-endings` | 登入後先見，自己嘅結局 |
+| `/admin` | 故事列表＋刪除（限管理員） |
 
-## 本機開發
+### 本機開發
 
 ```bash
 npm install
 npm run dev
 ```
 
-> `node_modules`／`.next` 已喺 2026-08-16 清走（462MB，淨係本機生成物，`.gitignore` 已排除，唔會推 GitHub，Drive Mirror 底下純屬佔位）。開發前一定要行一次 `npm install`。
-
-需要 `.env.local`（唔 commit，見 `.env.example`）：
+`.env.local` 唔 commit，見 `.env.example`：
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://cmtubaxlniglklmdwlzs.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase 嘅 anon/publishable key>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon/publishable key>
+DEEPSEEK_API_KEY=<DeepSeek key>
 ```
 
-## 資料庫（Supabase）
+部署：https://novel-web-sepia.vercel.app （Vercel project `novel-web`，`main` 有網站檔改動會自動部署）。
 
-三張表已經喺 `auzistephanie's Project`（project ref `cmtubaxlniglklmdwlzs`）建好：
+只改 `pipeline/` 或 `CHANGELOG.md` 時跳過 Vercel build。喺 [Git settings](https://vercel.com/auzistephanies-projects/novel-web/settings/git) 設 Ignored Build Step：
 
-- `novel_stories` — 故事本體，公開讀（`select` 政策 `using (true)`）
-- `novel_likes` — user 鍾意邊篇，RLS 淨係本人可見/可改
-- `novel_endings` — AI 生成嘅個人化結局，RLS 淨係本人可見（寫入由 scheduled task 直接用 Supabase MCP 執行，唔經 RLS）
+```bash
+git diff HEAD^ HEAD --quiet -- . ':!pipeline' ':!CHANGELOG.md'
+```
 
-## Scheduled tasks
+命令成功（exit 0）＝今次 commit 冇網站檔改動＝跳過 build。
 
-兩個排程任務用 Cowork 嘅 `mcp__scheduled-tasks` 建立，Prompt 入面直接指示 Claude 用 Supabase MCP 讀寫：
+## Python pipeline
 
-1. **novel-story-generator** — 定時生成新故事，insert 入 `novel_stories`
-2. **novel-ending-generator** — 定時掃 `novel_likes` 邊啲仲未有對應 `novel_endings`，幫個別 user 生成專屬結局
+```
+pipeline/
+├── shortdrama/     # fal.ai 圖生片（收費）。見 pipeline/shortdrama/CLAUDE.md
+├── videoclip/      # 免費短片：AI 圖 + Ken Burns + EdgeTTS。見 pipeline/videoclip/CLAUDE.md
+├── docs/SYSTEMS.md # 舊 bot 年代嘅類別／連載／留存筆記
+└── requirements.txt
+```
 
-## 部署（Vercel）
+```bash
+pip install -r pipeline/requirements.txt
+pip install -r pipeline/shortdrama/requirements.txt
+pip install -r pipeline/videoclip/requirements.txt
+```
 
-呢個 repo 冇連 Vercel API，需要手動一次性設定：
+`shortdrama/`、`videoclip/` 各自有 `.env.example`。片同 output 唔入 git。
 
-1. 上 [vercel.com/new](https://vercel.com/new)，揀返 `auzistephanie/novel-web` 呢個 GitHub repo
-2. Environment Variables 加返 `.env.local` 嗰兩條（`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`）
-3. Deploy —— 之後每次 `git push` main 都會自動重新部署
+## 推送
+
+由 repo 根跑，一次一個 commit：
+
+```bash
+python3 scripts/github_push.py --check
+python3 scripts/github_push.py "commit message"
+```
+
+改版記錄寫喺根目錄 `CHANGELOG.md` 頂部。
