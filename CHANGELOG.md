@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-13**：**故事生成 prompt 三刀（語言鎖／SHARED_BANS／針對性返修）** 起因：Stephanie 批准高優先 prompt 改動。只改 `route.ts` 字串邏輯，model 唔變（故事 `deepseek-chat`、結局 `deepseek-v4-flash`），唔改 `endings.ts`。今次只開 draft PR，未 merge、未 deploy、未推 main。
+  **修**（`src/app/api/cron/generate-stories/route.ts`）：① 語言鎖：`STYLE_2026` 第 2 條「輸咗」改「輸了」、第 8 條改書面語；`selfCheckClosure` 全段改書面語（不合格註記改「沒有完整收尾／沒有停在抉擇節點」）；10 個 Hook 的 driver＋seed 改書面語。② 新增 `SHARED_BANS`（先 7 條正向寫作，再共用禁區；「心情down」改「心情低落」），取代 `COMMON_BANS`；爽文刪【絕對禁忌】改掛 `SHARED_BANS`，非爽文 system prompt 同步用 `SHARED_BANS`。③ `judgePremiseTension`／`judgeLanePremise` 改出 JSON `pass`＋`failType`＋`reason`（maxTokens 80）；`writeDraft` 重寫同 `repairDraft` 按 failType 出針對性指示，唔再盲重寫；premise 不合格按 reason 重抽。
+  **未做**：未跑 production cron。待 Stephanie 批 draft。
+
 - **2026-10-13**：**daily-novel 併入本 repo 嘅 `pipeline/`，git 歷史保留** 起因：網站同 Python pipeline 分兩個 repo，改動記錄寫喺 daily-novel、產品 code 喺 novel-web。Owner 批准用 `git filter-repo --to-subdirectory-filter pipeline`，再喺新分支 `git merge --allow-unrelated-histories`。**冇** merge 落 `main`、**冇** 部署、**冇** 刪／封存公開 repo `auzistephanie/daily-novel`、**冇** 推 tag。
   **搬入 `pipeline/`**：`shortdrama/`、`videoclip/`、`docs/SYSTEMS.md`、`requirements.txt`，以及改寫前嘅全部 commit（filter-repo 會改 SHA，因為每條 path 加咗 `pipeline/` 前綴；commit message 同檔案內容跟得返）。`CHANGELOG.md` 由 `pipeline/` 搬到 repo 根。
   **刪（工作樹；舊 commit 仍在）**：同根目錄逐 byte 相同嘅 `pipeline/AGENTS.md`、`pipeline/scripts/github_push.py`；`pipeline/CLAUDE.md` 併入根 `CLAUDE.md`；暫存 `_tmp_story1.txt`–`_tmp_story3.txt`、`pipeline/novel_draft_1.txt`–`3.txt`；已停用 `push-novel-web.sh`。
