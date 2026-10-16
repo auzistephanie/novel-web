@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { deepseekChat, LANG_RULE } from "@/lib/deepseek";
+import {
+  assignCharacterPair,
+  BANNED_TOPIC_PROMPT,
+  BUSINESS_WAR_PROMPT,
+  classifyQualityNote,
+  FAIL_TYPES,
+  findBannedTopic,
+  findBusinessWar,
+  findPreachyEnding,
+  isHardBlocked,
+  nameBlockFromStories,
+  premiseBlockReason,
+  QUALITY_REPAIR,
+  qualityFailNotes,
+  type FailType,
+  type Gender,
+} from "@/lib/storyQuality";
 
 // 2026-08-01：novel-story-generator 由 Cowork scheduled task 換做 Vercel Cron，
 // 唔再靠 Claude agent 逐次人手判斷，全部驗收邏輯落實做 code + 一次輕量 DeepSeek 自我檢查。
@@ -96,7 +113,7 @@ const HOOK_ENGINES: HookEngine[] = [
     key: "wrong_identity",
     name: "錯位替身 + 即時拆穿",
     driver: "頂替身份的第一秒，就被最不該識破的人識破",
-    seed: "頂替失蹤的孿生姐姐出席死對頭的晚宴，第一晚就被對方堵在角落：「你扮得比你姐姐好。不過你姐姐不會用左手拿酒杯。」",
+    seed: "頂替久未露面的孿生姐姐出席死對頭的晚宴，第一晚就被對方堵在角落：「你扮得比你姐姐好。不過你姐姐不會用左手拿酒杯。」",
     genres: ["雙胞胎替身局", "身份反轉"],
   },
   {
@@ -147,7 +164,7 @@ const STAKE_TYPES = [
   "一個孩子的撫養權",
   "一間承載全部回憶、明天就要被收走的老房子",
   "一個苦讀多年、明天放榜就會被取消的資格",
-  "一份簽了就再也拿不回來的授權書",
+  "一份簽了就會失去住所的租約",
   "一個唯一肯替自己作證的人，正準備反口",
   "一份足以推翻當年冤案的舊紀錄",
   "一次錯過就再沒有第二次的救命名額",
@@ -155,10 +172,6 @@ const STAKE_TYPES = [
   "一個被同事當眾搶走、再也拿不回來的功勞",
   "一份被人動過手腳、足以令自己即刻被解僱的紀錄",
 ];
-
-const SURNAMES = ["沈", "陸", "江", "顧", "蘇", "林", "周", "程", "宋", "謝", "封", "傅", "聞", "盛", "時", "樓", "席", "慕", "厲", "荀", "崔", "裴"];
-const FEMALE_GIVEN = ["知微", "知意", "薏", "清昭", "念安", "疏影", "望舒", "宛卿", "憶蘿", "簡遙", "南星", "如晚", "青禾", "思螢", "蘇黎"];
-const MALE_GIVEN = ["沉硏", "臨渊", "行舟", "景琛", "亦臻", "聞禮", "執", "衍之", "聲遠", "承宴", "修白", "緘言"];
 
 // ---------- House Style（2026-08-19 大改：由「純文學向創作原則」整套換做「2026 短劇爽文法則」
 // ——起因：舊版六條原則（一場一景／信任讀者／意象貫穿／克制留白）係純文學美學，實測連人手
@@ -191,7 +204,7 @@ ${LANG_RULE}
 
 6. 鉤子句結尾
    short（短篇）：在打臉或情感爆發的最頂峰戛然而止，最後一句要是有傳播力的金句。
-   serial（連載）：停在身份即將揭穿／關鍵抉擇落地的前一秒。
+   serial（連載）：停在一個可續的下一步前一秒（即將做的選擇、即將說出的一句話、正在發生的動作）。禁止只留「權限／計畫還沒交代」這種沒有下一步的空懸。
 
 7. 女主要夠飒（2026-08-19 加返）
    女主／主角必須「發瘋、反套路、夠飒」——用擺爛、將計就計、當場拆穿、發瘋輸出等手段自救，
@@ -214,10 +227,12 @@ const SERIAL_STRUCTURE = `
 ⚠️ 字數硬性下限 3600 字，目標 4000–6500 字。少於 3600 字一律不合格會被打回重寫，所以必須寫足。
 如果覺得情節不夠長，就多加一層衝突或多寫一個爆點場面，不要草草收尾。
 節奏要求：分 4 至 5 節，每節結尾都要留一個鉤子；全篇主要反轉 2 至 3 個，每個都要有伏筆。不可以連續兩大段沒有推進。
-結尾必須停在一個具體的「抉擇／未揭曉節點」——對方即將講出關鍵答案的前一秒、主角即將做出攸關命運的選擇、
-秘密即將揭穿的前一刻、關鍵籌碼即將亮出的前一刻。
+結尾必須停在一個可續的下一步：對方即將講出關鍵答案的前一秒、主角即將做出攸關命運的選擇、
+秘密即將揭穿的前一刻、關鍵籌碼即將亮出的前一刻。下一步必須是具體的選擇、一句即將說出口的話，或一個正在發生的動作。
 這個節點要令讀者能想到至少兩種截然不同的後續發展（例如：他會不會揭穿我？他會不會原諒我？），才適合後續互動結局分支。
-單純斬在動作描寫中間、沒有分支想像空間的停法，不算合格。不可以寫成大團圓結局。
+單純斬在動作描寫中間、沒有分支想像空間的停法，不算合格。
+禁止「權限／計畫／真相還沒交代」這種沒有下一步的空懸：懸念可以留，但讀者必須知道有人正要做一件具體的事。
+不可以寫成大團圓結局。
 `;
 
 const SHORT_STRUCTURE = `
@@ -242,12 +257,12 @@ const COMMON_READ_THROUGH = `
 【全線共用：讓讀者一口氣讀到最後】
 0. 先讓人看得懂（最優先，高於懸念與文采）：第一節的頭 300 字內必須用平白的句子交代清楚——主角是誰、身處哪裡、想要什麼、眼前出了什麼事。第一次提到的對話或事件要直接寫出內容，禁止用「那句話」「那六個字」「那件事」這類讀者還不知道的指代吊胃口。如果有特殊規則（例如奇怪的 App、能力），必須在第一節用兩三句直白說清楚它能做什麼、代價是什麼；規則一經確立，全文不可以自相矛盾，也不可以用數字額度、次數換算之類容易算錯的設定。每條伏筆、每個神秘線索都必須在結尾前回收；人物做出反常行為（例如說狠話、疏遠對方），必須先在前文鋪墊動機。普通讀者一次讀完就能向朋友複述劇情，才算合格。
 1. 核心問題：開頭 100 字內必須拋出一個具體、讀者急著想知道答案的問題（例如「她為甚麼要替仇人作證？」「明天的訊息是誰發的？」），這個問題貫穿全文。short 必須在最後一節才回答；serial 必須把答案推到揭曉前一秒。不可以中途提早揭曉。
-2. 分節：全文分成 4 至 5 節，節與節之間單獨一行只寫「${SECTION_MARK}」（三個全形星號），不要寫節標題或編號。每一節的最後一句都必須是鉤子：一個新的疑點、一個未完成的動作、或一句令人不安的話。
+2. 分節：全文分成 4 至 5 節，節與節之間單獨一行只寫「${SECTION_MARK}」（三個全形星號），不要寫節標題或編號。每一節的最後一句都必須是鉤子：一個新的疑點、一個未完成的動作、或一句令人不安的話。連載最後一節的鉤子必須是可續的下一步（選擇、即將說出的話、或正在發生的動作），不可以只留「權限／計畫未交代」。
 3. 反轉：全篇主要反轉 2 至 3 個，寧少勿亂。每個反轉之前，前文必須已經埋下讀者看得見的伏筆。禁止靠連串巧合推進——讀者一旦不信，就不會讀到最後。
 4. 段落短：1 至 3 句一段，關鍵句獨立成段，適合手機閱讀。
 5. 結尾最後一句要短、有力、可以獨立截圖傳播。
 6. 設定要簡單：全篇最多一條特殊規則，第一節講清楚；不要多層反轉套多層設定。
-7. 結尾禁止說教或總結人生道理（例如「有時候……」「原來……」式感言）。最後一段必須用畫面或對白收尾，不准升華。
+7. 結尾禁止說教或總結人生道理（例如「有時候……」「原來……」「好運非零和」「這件事讓我明白」）。最後一段必須用畫面或對白收尾，不准升華。說教式收尾會被判不合格。
 `;
 
 const SHARED_BANS = `
@@ -264,14 +279,15 @@ ${LANG_RULE}
 7. 少 AI 腔：用詞乾淨、具體。禁止：夜幕降臨、不禁、彷彿整個世界、心跳漏了一拍、眼眶泛紅、五味雜陳。
 
 【共用禁區】
-- 嚴禁商戰：企業收購、股權爭奪、集團鬥爭、董事會奪權、估值談判。職場上人與人之間的衝突可以寫。
+- ${BUSINESS_WAR_PROMPT}
+- ${BANNED_TOPIC_PROMPT}
 - 嚴禁豪門、財閥、總裁、繼承人、家族聯姻設定。主角是普通人。
 - 嚴禁鬼怪、靈異、恐怖、血腥元素。
 - 嚴禁代孕、懷孕測試、墮胎、亂倫或親屬間戀愛暗示、未成年情節、性交易。如有感情線，雙方必須是對等成年人。
 - 嚴禁把深情寫成長期監視、偷偷記錄對方一舉一動。
 - 秘密被揭開的方式不可以用「翻舊物、搜到證物、解鎖舊裝置、偷看日記」，要用：當場撞破、第三者講漏嘴、直接對峙、心聲被聽見，或者由前文伏筆自然推出。
 - 嚴禁 AI 陳套：夜幕降臨、不禁、彷彿整個世界、心跳漏了一拍、眼眶泛紅、五味雜陳。
-- 嚴禁命案、兇手、綁架、追殺、警察查案（本站不寫懸疑推理）。可以有誤會、秘密、謊言，但不要有人被殺或失蹤。
+- 嚴禁命案、兇手、綁架、追殺、警察查案（本站不寫懸疑推理）。可以有誤會、秘密、謊言，但不要有人被殺，也不可以有人失蹤。
 - 嚴禁「買賣／刪除／移植／偷取別人記憶」類設定，也不要用「真假記憶」套娃詭計（讀者看不懂）。
 - 嚴禁嘲笑外貌、體型、年齡、性別或職業的笑點。
 - 嚴禁以寵物或親人的死亡、安樂死、絕症、喪事作為故事核心（太沉重，讀者不想看）。傷感可以有，但整體要讓人想看下去，不是讓人心情低落。
@@ -411,7 +427,7 @@ const LANES: Lane[] = [
       "一件家電／一隻寵物／一份外賣引發一連串災難",
       "主角為了省一點錢做的決定，代價越滾越大",
       "主角被安排去培訓一個將會取代自己的新人",
-      "主角在婚禮／喪禮／畢業典禮上被迫臨時上台發言",
+      "主角在婚禮／畢業典禮上被迫臨時上台發言",
     ],
     seeds: [
       "公司裁員名單出來那天，我排第一。負責通知我的，是我自己——人事部只剩我一個人。",
@@ -579,7 +595,7 @@ const LANES: Lane[] = [
       "前同事在新公司成了主角的客戶，雙方都假裝不認識",
       "喜宴上遇到當年沒說出口告白的人，對方是新郎的朋友",
       "老房子拆遷前回去收拾，遇到了當年的舊鄰居",
-      "兩個曾經的好友斷交十年，在共同恩師的告別式上重逢",
+      "兩個曾經的好友斷交十年，在共同恩師的退休宴上重逢",
       "重逢時，對方假裝不認識主角",
       "同一班飛機、相鄰座位，兩個十年沒聯絡的人",
       "在異地城市的咖啡店，遇到當年不告而別的人",
@@ -641,6 +657,11 @@ function pickLane(storyType: StoryType, exclude: Set<LaneKey>): Lane {
   return pickWeighted(pool.length > 0 ? pool : eligible);
 }
 
+function castGenders(laneKey: LaneKey): [Gender, Gender] {
+  if (laneKey === "shuangwen") return ["F", "M"];
+  return Math.random() < 0.5 ? ["F", "M"] : ["M", "F"];
+}
+
 // 每條線容許嘅敘事形式（黑色幽默固定第一人稱，所以唔用第二人稱；serial 要停喺揭曉前，所以唔用倒敘）
 const LANE_FORMS: Record<LaneKey, string[]> = {
   shuangwen: ["normal", "flash_forward", "chat_log"],
@@ -677,26 +698,10 @@ const AI_CLICHES = [
 ];
 const TITLE_FORMULAIC = /^.{2,6}(的|之).{2,6}$/;
 
-// 2026-08-19：Stephanie 澄清「職場鬥爭 OK，商戰唔要」之後實測發現——單靠 prompt 擋唔住，
-// 模型會由「被同事搶功勞」自己升級去「總部收購目標」。所以加 code 層黑名單，
-// premise 同正文兩層都 check，撞到就重生成。
-// ⚠️ 揀詞準則：只收「公司對公司嘅生意攻防」用語，唔收「人對人嘅職場衝突」用語
-//（所以冇收「主管」「同事」「升職」「解僱」呢啲——嗰啲而家係容許嘅）。
-const BUSINESS_WAR_WORDS = [
-  "收購", "併購", "股權", "股份", "董事會", "上市", "估值", "融資",
-  "商戰", "競標", "併吞", "控股", "集團利益", "商業機密",
-];
-
 function pick<T>(arr: T[], exclude: Set<T> = new Set()): T {
   const pool = arr.filter((x) => !exclude.has(x));
   const src = pool.length > 0 ? pool : arr;
   return src[Math.floor(Math.random() * src.length)];
-}
-
-function pickName(recentSurnames: Set<string>, givenPool: string[]): string {
-  const surname = pick(SURNAMES, recentSurnames);
-  const given = givenPool[Math.floor(Math.random() * givenPool.length)];
-  return surname + given;
 }
 
 type StoryType = "serial" | "short";
@@ -767,40 +772,24 @@ function validateContent(content: string, storyType: StoryType): string[] {
   for (const c of AI_CLICHES) {
     if (content.includes(c)) fails.push(`AI陳套詞:${c}`);
   }
-  for (const w of BUSINESS_WAR_WORDS) {
-    if (content.includes(w)) fails.push(`商戰詞:${w}`);
-  }
+  fails.push(...qualityFailNotes(content, storyType));
   return fails;
 }
 
 // 2026-10-13：judge／重寫／返修共用嘅失敗類型。重寫唔再盲重寫成篇，按 failType 出針對性指示。
-const FAIL_TYPES = [
-  "LENGTH",
-  "SECTION",
-  "SIMPLIFIED",
-  "CANTONESE",
-  "CLICHE",
-  "BUSINESS_WAR",
-  "CLOSURE_SHORT",
-  "CLOSURE_SERIAL",
-  "OPEN",
-  "LOGIC",
-  "PREMISE_TENSION",
-  "PREMISE_LANE",
-  "OTHER",
-] as const;
-type FailType = (typeof FAIL_TYPES)[number];
+// 2026-10-16：BANNED_TOPIC／EMPTY_HOOK／PREACHY 同商戰詞表喺 storyQuality.ts。
 type FailHit = { failType: FailType; reason: string };
 type PremiseJudge = { pass: boolean; failType: FailType | null; reason: string };
 const FAIL_TYPE_SET = new Set<string>(FAIL_TYPES);
 
 function classifyValidateFail(note: string): FailType {
+  const quality = classifyQualityNote(note);
+  if (quality) return quality;
   if (note.startsWith("字數不足")) return "LENGTH";
   if (note.startsWith("分節")) return "SECTION";
   if (note.startsWith("簡體字")) return "SIMPLIFIED";
   if (note.startsWith("粵語")) return "CANTONESE";
   if (note.startsWith("AI陳套")) return "CLICHE";
-  if (note.startsWith("商戰")) return "BUSINESS_WAR";
   if (note.includes("沒有完整收尾")) return "CLOSURE_SHORT";
   if (note.includes("沒有停在抉擇")) return "CLOSURE_SERIAL";
   if (note.startsWith("開頭") || note.includes("看不懂")) return "OPEN";
@@ -832,11 +821,17 @@ function failInstruction(failType: FailType, storyType: StoryType, reason: strin
     case "CLICHE":
       return "只改陳套句。換掉或刪掉 AI 陳套（夜幕降臨、不禁、彷彿整個世界、心跳漏了一拍、眼眶泛紅、五味雜陳），情節與結構不動。";
     case "BUSINESS_WAR":
-      return "改為人際衝突。把企業收購、股權、董事會、公司對公司的攻防，改成人之間的針對、搶功、誣陷或頂罪。";
+      return QUALITY_REPAIR.BUSINESS_WAR;
+    case "BANNED_TOPIC":
+      return QUALITY_REPAIR.BANNED_TOPIC;
     case "CLOSURE_SHORT":
-      return "只重寫尾節。短篇必須完整收尾：衝突有結果、疑問有答案、情緒落地。餘韻式收尾可以，不可留下未回答的核心懸念。前面各節不要改。";
+      return "只重寫尾節。短篇必須完整收尾：衝突有結果、疑問有答案、情緒落地。餘韻式收尾可以，不可留下未回答的核心懸念，也不可以改成說教。前面各節不要改。";
     case "CLOSURE_SERIAL":
-      return "只重寫尾節。連載必須停在一個具體的抉擇／未揭曉節點，讓讀者能想到至少兩種不同後續，不要一次解決整個衝突。前面各節不要改。";
+      return "只重寫尾節。連載必須停在可續的下一步（具體抉擇、即將說出的話、或正在發生的動作），讓讀者能想到至少兩種不同後續。禁止「權限／計畫未交代」式空懸，也不要一次解決整個衝突。前面各節不要改。";
+    case "EMPTY_HOOK":
+      return QUALITY_REPAIR.EMPTY_HOOK;
+    case "PREACHY":
+      return QUALITY_REPAIR.PREACHY;
     case "OPEN":
       return "只改第一節前約 300 字。用平白句子交代主角是誰、在哪裡、想要什麼、眼前發生什麼事；禁止未說明的指代。後面各節不要改。";
     case "LOGIC":
@@ -926,6 +921,10 @@ function validateTitle(title: string, recentTitles: string[]): string[] {
   for (const rt of recentTitles) {
     if (rt && (title.includes(rt) || rt.includes(title))) fails.push("標題撞近期");
   }
+  const topic = findBannedTopic(title);
+  if (topic) fails.push(`禁題:${topic}`);
+  const biz = findBusinessWar(title);
+  if (biz) fails.push(`商戰詞:${biz}`);
   return fails;
 }
 
@@ -984,6 +983,9 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
     }
     userMsg = `${userMsg}\n\n⚠️上一批候選（${cands.join("／")}）都不合格，第一個的原因：${firstFails.join("；") || "未知"}。請重新想 5 個。`;
   }
+  if (findBannedTopic(lastTitle) || findBusinessWar(lastTitle)) {
+    throw new Error(`標題仍含禁題或商戰詞，不發佈：${lastTitle}`);
+  }
   return lastTitle;
 }
 
@@ -1004,6 +1006,7 @@ async function generateTeaser(content: string, title: string): Promise<string> {
     const t = raw.trim().replace(/^["「『]+|["」』]+$/g, "").replace(/\n+/g, "");
     if (t.length < 12 || t.length > 80) return "";
     if (SIMPLIFIED_ONLY.some((ch) => t.includes(ch))) return "";
+    if (findBannedTopic(t) || findBusinessWar(t) || findPreachyEnding(t)) return "";
     return t;
   } catch {
     return "";
@@ -1014,8 +1017,8 @@ async function generateTeaser(content: string, title: string): Promise<string> {
 async function selfCheckClosure(content: string, storyType: StoryType): Promise<boolean> {
   const question =
     storyType === "short"
-      ? "以下短篇故事的結局是否完整收尾（衝突有結果、疑問有答案、情緒已經落地；餘韻式或安靜的收尾也算合格，只要沒有留下未回答的核心懸念）？"
-      : "以下連載故事的結尾是否停在一個具體的抉擇／未揭曉節點（讓讀者能想到至少兩種不同的後續發展），而不是已經完整解決了整個衝突？";
+      ? "以下短篇故事的結局是否完整收尾（衝突有結果、疑問有答案、情緒已經落地；餘韻式或安靜的收尾也算合格，只要沒有留下未回答的核心懸念）？若結尾在說教或總結人生道理（例如「有時候」「原來」「好運非零和」），回答不合格。"
+      : "以下連載故事的結尾是否停在一個可續寫的節點：讀者能想到至少兩種不同的下一步，而且下一步是具體的選擇、即將說出的話，或正在發生的動作？已經完整解決整個衝突，回答不合格。只留下「權限／計畫／真相還沒交代」這類沒有下一步的空懸，也回答不合格。";
   const raw = await deepseekChat(
     [
       { role: "system", content: "你是嚴格的編輯，只回答「合格」或「不合格」，不要加任何其他文字。" },
@@ -1050,7 +1053,8 @@ async function generatePremise(
     // 完全破壞言情關係。要明文鎖死男女主必須係可以發展感情嘅對等成年人。
     `- 男主女主必須是可以發展感情關係的對等成年人。嚴禁把兩人寫成父女、母子、兄妹、姊弟或任何血緣親屬關係。\n` +
     // 2026-08-19 Stephanie 澄清：職場鬥爭 OK，商戰唔要。原本兩樣綁埋一齊禁，而家拆開。
-    `- 嚴禁商戰：企業收購、股權爭奪、集團鬥爭、董事會奪權這一類不准寫。但職場上的個人衝突（被上司針對、被同事搶功、被誣陷、被逼頂罪）可以寫，而且鼓勵。\n` +
+    `- ${BUSINESS_WAR_PROMPT}但職場上的個人衝突（被上司針對、被同事搶功、被誣陷、被逼頂罪）可以寫，而且鼓勵。\n` +
+    `- ${BANNED_TOPIC_PROMPT}\n` +
     `- 嚴禁鬼怪靈異恐怖。籌碼要用個人向的東西。\n` +
     `- 嚴禁寫成平靜的日常相處、合租同居、兩個人慢慢互相理解。\n` +
     // 2026-08-19 首輪實測補鑊：新 prompt 一放開「極端衝突」，模型即刻衝去獵奇題材
@@ -1092,10 +1096,11 @@ async function judgePremiseTension(premise: string): Promise<PremiseJudge> {
     `合格條件（必須全部滿足）：\n` +
     `1. 有立即的、正在發生的高壓衝突（不是背景交代）\n` +
     `2. 有明確而具體的籌碼（輸了會即刻失去某樣東西）\n` +
-    `3. 有讓人想知道「然後呢」的懸念或意外轉折\n\n` +
+    `3. 有讓人想知道「然後呢」的懸念或意外轉折\n` +
+    `4. 沒有失蹤、車禍、警察、殯儀館、猝死，也沒有產權、法院拍賣、授權書、標金這類商戰\n\n` +
     `開局：「${premise}」\n\n` +
     `只輸出 JSON，不要其他文字。合格：{"pass":true,"failType":null,"reason":""}。不合格：{"pass":false,"failType":"PREMISE_TENSION","reason":"40字內說明哪一條不合格"}。\n` +
-    `failType 只可以是：LENGTH、SECTION、SIMPLIFIED、CANTONESE、CLICHE、BUSINESS_WAR、CLOSURE_SHORT、CLOSURE_SERIAL、OPEN、LOGIC、PREMISE_TENSION、PREMISE_LANE、OTHER。本關不合格時 failType 必須是 PREMISE_TENSION。`;
+    `failType 只可以是：${FAIL_TYPES.join("、")}。本關不合格時 failType 必須是 PREMISE_TENSION。`;
   try {
     const raw = await deepseekChat([{ role: "user", content: prompt }], {
       model: "deepseek-chat",
@@ -1130,7 +1135,7 @@ async function generateLanePremise(
     `${SHARED_BANS}\n` +
     `【張力標尺（示範這個吸引力水平，但嚴禁抄襲它的情節、職業、場景或對白）】\n${lane.seeds.join("\n")}`;
   const userMsg =
-    `主要人物姓名：${names}（可以只用其中一個，但不要改姓氏）。\n` +
+    `主要人物姓名：${names}（必須使用這些姓名，不要改姓，也不要改名；可以只用其中一個）。\n` +
     (recentPremises.length
       ? `\n【近期已經用過的開局，必須完全避開】\n${recentPremises.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n`
       : "") +
@@ -1153,10 +1158,11 @@ async function judgeLanePremise(premise: string, lane: Lane): Promise<PremiseJud
     `1. 是正在發生的場面，不是背景交代\n` +
     `2. 讀完會冒出一個具體、想知道答案的問題\n` +
     `3. ${lane.judgeHint}\n` +
-    `4. 一次就能看懂：沒有未說明的指代，規則或設定簡單清楚，不靠數字額度\n\n` +
+    `4. 一次就能看懂：沒有未說明的指代，規則或設定簡單清楚，不靠數字額度\n` +
+    `5. 沒有失蹤、車禍、警察、殯儀館、猝死，也沒有產權、法院拍賣、授權書、標金這類商戰\n\n` +
     `開局：「${premise}」\n\n` +
     `只輸出 JSON，不要其他文字。合格：{"pass":true,"failType":null,"reason":""}。不合格：{"pass":false,"failType":"PREMISE_LANE","reason":"40字內說明哪一條不合格"}。\n` +
-    `failType 只可以是：LENGTH、SECTION、SIMPLIFIED、CANTONESE、CLICHE、BUSINESS_WAR、CLOSURE_SHORT、CLOSURE_SERIAL、OPEN、LOGIC、PREMISE_TENSION、PREMISE_LANE、OTHER。本關不合格時 failType 必須是 PREMISE_LANE。`;
+    `failType 只可以是：${FAIL_TYPES.join("、")}。本關不合格時 failType 必須是 PREMISE_LANE。`;
   try {
     const raw = await deepseekChat([{ role: "user", content: prompt }], {
       model: "deepseek-chat",
@@ -1213,7 +1219,7 @@ async function readerJudge(content: string): Promise<ReaderScore | null> {
     `評分要嚴格：普通的故事只值 5-6 分，只有真正讓人停不下來的才給 8 分以上。\n\n` +
     `另外請再做兩項「看不看得懂」檢查（1-10 分，嚴格）：\n` +
     `- open：只看開頭約 300 字，你能不能清楚說出誰在哪裡、發生什麼事、特殊規則是什麼？有未說明的指代（如「那句話」）或一頭霧水就低於 6 分。\n` +
-    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？情節在現實中是否說得通（例如簽名可以被重複使用就是不通）？標題講的畫面是否真的在故事裡發生？結尾若出現說教式總結道理、或真相靠翻舊紀錄／證物揭曉、或內容屬命案懸疑、記憶買賣，logic 一律低於 6 分。有明顯矛盾或沒回收也低於 6 分。\n\n` +
+    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？情節在現實中是否說得通（例如簽名可以被重複使用就是不通）？標題講的畫面是否真的在故事裡發生？結尾若出現說教式總結道理（例如「有時候」「原來」「好運非零和」）、或真相靠翻舊紀錄／證物揭曉、或內容屬命案懸疑、失蹤、車禍、警察、殯儀館、猝死、產權法院拍賣、記憶買賣，logic 一律低於 6 分。連載若結尾只留「權限／計畫未交代」而沒有下一步行動，logic 也低於 6 分。有明顯矛盾或沒回收也低於 6 分。\n\n` +
     `${insertReadMarks(content)}\n\n` +
     `只輸出 JSON，不要其他文字：{"p25":分數,"p50":分數,"p75":分數,"end":分數,"open":分數,"logic":分數,"issue":"最大的看不懂之處，25 字內","drop":"最可能棄書的位置與原因，20 字內"}`;
   try {
@@ -1328,6 +1334,10 @@ async function repairDraft(
     const fails = validateContent(c, storyType);
     const n = sectionCount(c);
     if (n < 4 || n > 6) fails.push(`分節數不對（${n}節）`);
+    if (fails.length === 0) {
+      const closureOk = await selfCheckClosure(c, storyType).catch(() => true);
+      if (!closureOk) fails.push(storyType === "short" ? "沒有完整收尾" : "沒有停在抉擇節點");
+    }
     const score = await readerJudge(c);
     return { content: c, pass: fails.length === 0, validateNote: fails.length ? fails.join("；") : "PASS", retries: d.retries + 1, form: `${d.form}+repair`, score };
   } catch {
@@ -1339,7 +1349,7 @@ async function generateOne(
   storyType: StoryType,
   lane: Lane,
   recentTitles: string[],
-  recentSurnames: Set<string>,
+  cast: [string, string],
   recentMetas: GenMeta[],
   forcedHook?: HookEngine
 ): Promise<{
@@ -1370,8 +1380,8 @@ async function generateOne(
     const hook = forcedHook ?? pickHook(recentHooks(recentMetas));
     const stake = pick(STAKE_TYPES, recentStakes(recentMetas));
     genre = pick(hook.genres);
-    const heroineName = pickName(recentSurnames, FEMALE_GIVEN);
-    const heroName = pickName(new Set([...recentSurnames, heroineName[0]]), MALE_GIVEN);
+    const heroineName = cast[0];
+    const heroName = cast[1];
     protagonist = `${heroineName}、${heroName}`;
 
     let priorFail: FailHit | null = null;
@@ -1379,11 +1389,11 @@ async function generateOne(
       const p: string = await generatePremise(hook, stake, heroineName, heroName, recentPremises, priorFail).catch(() => "");
       if (!p) continue;
       premise = p;
-      // 商戰詞喺 premise 層就要攔（正文層攔唔到，因為 retry 會用返同一個 premise）
-      const bizHit: string | undefined = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
-      if (bizHit) {
-        premiseNote = `premise撞商戰詞(${bizHit})`;
-        priorFail = { failType: "BUSINESS_WAR", reason: `開局出現商戰詞「${bizHit}」，必須改成人與人之間的衝突` };
+      // 禁題／商戰詞喺 premise 層就要攔（正文層攔唔到，因為 retry 會用返同一個 premise）
+      const blocked = premiseBlockReason(p);
+      if (blocked) {
+        premiseNote = `premise撞${blocked.failType}(${blocked.reason})`.slice(0, 120);
+        priorFail = blocked;
         continue;
       }
       const judged = await judgePremiseTension(p);
@@ -1398,17 +1408,13 @@ async function generateOne(
     systemMsg = `${STYLE_2026_SHUANGWEN}\n${COMMON_READ_THROUGH}`;
     laneLine =
       `【Hook 類型】${hook.name}——${hook.driver}\n` +
-      `女主姓名：${heroineName}，男主姓名：${heroName}（名字可微調，但不要改姓氏）。`;
+      `女主姓名：${heroineName}，男主姓名：${heroName}（必須使用這兩個姓名，不要改姓，也不要改名）。`;
   } else {
     // ---- 其他線：切入點池＋本線開局指引 ----
     const angle = pick(lane.angles, recentAngles(recentMetas));
     genre = pick(lane.genres);
-    const mainPool = Math.random() < 0.5 ? FEMALE_GIVEN : MALE_GIVEN;
-    const mainName = pickName(recentSurnames, mainPool);
-    const sideName = pickName(
-      new Set([...recentSurnames, mainName[0]]),
-      mainPool === FEMALE_GIVEN ? MALE_GIVEN : FEMALE_GIVEN
-    );
+    const mainName = cast[0];
+    const sideName = cast[1];
     protagonist = `${mainName}、${sideName}`;
 
     let priorFail: FailHit | null = null;
@@ -1416,10 +1422,10 @@ async function generateOne(
       const p: string = await generateLanePremise(lane, angle, `${mainName}、${sideName}`, recentPremises, priorFail).catch(() => "");
       if (!p) continue;
       premise = p;
-      const bizHit: string | undefined = BUSINESS_WAR_WORDS.find((w) => p.includes(w));
-      if (bizHit) {
-        premiseNote = `premise撞商戰詞(${bizHit})`;
-        priorFail = { failType: "BUSINESS_WAR", reason: `開局出現商戰詞「${bizHit}」，必須改成人與人之間的衝突` };
+      const blocked = premiseBlockReason(p);
+      if (blocked) {
+        premiseNote = `premise撞${blocked.failType}(${blocked.reason})`.slice(0, 120);
+        priorFail = blocked;
         continue;
       }
       const judged = await judgeLanePremise(p, lane);
@@ -1432,7 +1438,12 @@ async function generateOne(
     }
     genMeta = { lane: lane.key, angle, premise };
     systemMsg = `${SHARED_BANS}\n${lane.style}\n${COMMON_READ_THROUGH}`;
-    laneLine = `【故事線】${lane.name}\n【切入點】${angle}\n主要人物：${mainName}、${sideName}（名字可微調，但不要改姓氏；不一定要寫成愛情）。`;
+    laneLine = `【故事線】${lane.name}\n【切入點】${angle}\n主要人物：${mainName}、${sideName}（必須使用這兩個姓名，不要改名；不一定要寫成愛情）。`;
+  }
+
+  const stillBlocked = premiseBlockReason(premise);
+  if (stillBlocked) {
+    throw new Error(`開局未過硬性禁區（${stillBlocked.reason}），這篇不生成`);
   }
 
   const structure = storyType === "serial" ? SERIAL_STRUCTURE : SHORT_STRUCTURE;
@@ -1472,7 +1483,8 @@ async function generateOne(
   const clear = (d: Draft) => !d.score || (d.score.open >= 6 && d.score.logic >= 5);
   // 簡體字稿件絕對唔可以發佈（validate 失敗但仍會被保底揀中嘅話，會直接上線）
   const minUsableLen = storyType === "serial" ? 3000 : 2200; // 低過呢個先當太短排除（目標下限 3600／2600 靠 repair 補）
-  const usable = (d: Draft) => clear(d) && !d.validateNote.includes("簡體字") && d.content.length >= minUsableLen;
+  // 簡體字、商戰、禁題、說教結尾、連載空懸：返修完仍在就唔發佈。唔會改動已上線故事。
+  const usable = (d: Draft) => clear(d) && !isHardBlocked(d.validateNote) && d.content.length >= minUsableLen;
   let ranked = drafts
     .filter(usable)
     .sort(
@@ -1551,26 +1563,34 @@ export async function GET(req: NextRequest) {
 
   const { data: recent } = await supabase
     .from("novel_stories")
-    .select("title, protagonist, gen_meta")
+    .select("title, protagonist, content, gen_meta, created_at")
     .order("created_at", { ascending: false })
-    .limit(12);
+    .limit(40);
 
   const recentTitles = (recent ?? []).map((r) => r.title as string);
-  const recentSurnames = new Set(
-    (recent ?? [])
-      .flatMap((r) => ((r.protagonist as string) ?? "").split("、"))
-      .map((n) => n.trim()[0])
-      .filter(Boolean)
-  );
   const recentMetas: GenMeta[] = (recent ?? [])
     .map((r) => r.gen_meta as GenMeta | null)
     .filter((m): m is GenMeta => !!m);
+  // 近 14 日全名硬性排除；同一香港日再排除名字。正文／標題／premise 一併掃，唔只靠 protagonist 欄。
+  const nameBlock = nameBlockFromStories(
+    (recent ?? []).map((r) => {
+      const meta = r.gen_meta as GenMeta | null;
+      return {
+        protagonist: (r.protagonist as string | null) ?? null,
+        title: (r.title as string | null) ?? null,
+        content: (r.content as string | null) ?? null,
+        premise: meta?.premise ?? null,
+        created_at: (r.created_at as string | null) ?? null,
+      };
+    }),
+    new Date()
+  );
 
   // 2026-08-19：short / serial 由順序執行改做並行（Gemini review 建議）——加咗 premise
   // 階段之後 call 數上升，並行可以將 wall-clock 由「兩篇相加」變成「較慢嗰篇」，
   // 留返足夠 headroom 俾 Vercel 300 秒上限。
   // ⚠️ 代價：兩篇唔會再互相排除標題/hook（原本順序跑會將前一篇 unshift 入 recentMetas）。
-  // 補償做法：預先幫兩篇各自 reserve 一個唔同嘅 hook，避免同一個 run 入面撞同一個 hook。
+  // 補償做法：預先幫兩篇各自 reserve 一個唔同嘅 hook，以及一組唔撞嘅姓名。
   const reservedHooks = new Set(recentHooks(recentMetas));
   const hookForShort = pickHook(reservedHooks);
   reservedHooks.add(hookForShort.key);
@@ -1587,12 +1607,15 @@ export async function GET(req: NextRequest) {
       ? forceLane
       : pickLane("serial", new Set([...laneExclude, laneForShort.key]));
 
+  const shortCast = assignCharacterPair(nameBlock, castGenders(laneForShort.key));
+  const serialCast = assignCharacterPair(nameBlock, castGenders(laneForSerial.key));
+
   const settled = await Promise.allSettled(
     ([
-      ["short", laneForShort, hookForShort],
-      ["serial", laneForSerial, hookForSerial],
-    ] as [StoryType, Lane, HookEngine][]).map(([storyType, lane, forcedHook]) =>
-      generateOne(storyType, lane, recentTitles, recentSurnames, recentMetas, forcedHook).then(
+      ["short", laneForShort, hookForShort, shortCast],
+      ["serial", laneForSerial, hookForSerial, serialCast],
+    ] as [StoryType, Lane, HookEngine, [string, string]][]).map(([storyType, lane, forcedHook, cast]) =>
+      generateOne(storyType, lane, recentTitles, cast, recentMetas, forcedHook).then(
         (story) => ({ storyType, story })
       )
     )
