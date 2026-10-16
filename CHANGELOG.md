@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-16**：**故事生成質素閘收緊（姓名／禁題／商戰／連載空懸／說教）** 起因：當日 cron 仍漏禁題同撞名。只改生成同 judge 規則，**唔會**隱藏、下架或刪除已有故事。
+  **修**（`src/lib/storyQuality.ts`、`src/app/api/cron/generate-stories/route.ts`）：① 姓名池加大；近 14 日全名（主角欄＋標題＋正文＋premise）硬性排除，同一香港日唔再同一名字；同一個 run 兩篇先佔名再並行。② 失蹤／車禍／警察／殯儀館／猝死及同義詞進 prompt，並以 `BANNED_TOPIC` 喺開局同正文擋，返修完仍在就唔發佈。③ `BUSINESS_WAR` 加產權／法院拍賣／授權書／標金等。④ 連載結尾要有可續下一步；「權限／計畫未交代」式空懸係 `EMPTY_HOOK`，judge 判「沒有停在抉擇節點」亦唔發佈。⑤ 說教收尾（例如「好運非零和」）係 `PREACHY`。
+  **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts`（11 項過）、`npm run build` 過。未跑 production cron，未改已上線故事。
+
 - **2026-10-13**：**故事生成 prompt 三刀（語言鎖／SHARED_BANS／針對性返修）** 起因：Stephanie 批准高優先 prompt 改動。只改 `route.ts` 字串邏輯，model 唔變（故事 `deepseek-chat`、結局 `deepseek-v4-flash`），唔改 `endings.ts`。今次只開 draft PR，未 merge、未 deploy、未推 main。
   **修**（`src/app/api/cron/generate-stories/route.ts`）：① 語言鎖：`STYLE_2026` 第 2 條「輸咗」改「輸了」、第 8 條改書面語；`selfCheckClosure` 全段改書面語（不合格註記改「沒有完整收尾／沒有停在抉擇節點」）；10 個 Hook 的 driver＋seed 改書面語。② 新增 `SHARED_BANS`（先 7 條正向寫作，再共用禁區；「心情down」改「心情低落」），取代 `COMMON_BANS`；爽文刪【絕對禁忌】改掛 `SHARED_BANS`，非爽文 system prompt 同步用 `SHARED_BANS`。③ `judgePremiseTension`／`judgeLanePremise` 改出 JSON `pass`＋`failType`＋`reason`（maxTokens 80）；`writeDraft` 重寫同 `repairDraft` 按 failType 出針對性指示，唔再盲重寫；premise 不合格按 reason 重抽。
   **未做**：未跑 production cron。待 Stephanie 批 draft。
