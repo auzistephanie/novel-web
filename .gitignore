@@ -9,7 +9,9 @@ build
 next-env.d.ts
 .DS_Store
 .vercel
-package-lock.json
+
+# 一次性故事草稿（_tmp_story1~3.txt 曾誤 commit）
+_tmp_story*.txt
 
 # Python（pipeline/ 同任何深度）
 __pycache__/
