@@ -18,6 +18,7 @@ import {
   type FailType,
   type Gender,
 } from "@/lib/storyQuality";
+import { closureFailNote, nextSeriesOrder, pickLaneByWeight, resolveForcedLane } from "@/lib/lanePick";
 
 // 2026-08-01：novel-story-generator 由 Cowork scheduled task 換做 Vercel Cron，
 // 唔再靠 Claude agent 逐次人手判斷，全部驗收邏輯落實做 code + 一次輕量 DeepSeek 自我檢查。
@@ -308,7 +309,8 @@ type LaneKey =
   | "trend_hook"
   | "sweet_romcom"
   | "cozy_shop"
-  | "reunion";
+  | "reunion"
+  | "kanbujian";
 
 type Lane = {
   key: LaneKey;
@@ -392,7 +394,28 @@ const REUNION_STYLE = `
 - 回憶只輕輕帶過，不寫未成年人的戀愛情節。
 `;
 
-const LANES: Lane[] = [
+// 全文自檢同讀者評分共用。開局審查只睇道具有冇出場；callback 同收口喺成篇先驗。
+export const KANBUJIAN_CLOSURE_CHECK =
+  "一件具體實物道具必須在故事前半已經出現，並在最後一段被再次提起（callback）；結局必須收口，不可以是開放結局；不說教，不直述感情。";
+
+const KANBUJIAN_STYLE = `
+【看不見的好文風】
+本線覆寫上面「不可用翻舊物揭秘」那一條，而且只限生活實物：心意要靠一件早已出場的日常物件被看懂。仍然禁止卷宗、警方紀錄、舊手機、解鎖舊裝置，也禁止用長篇日記把過去講完。
+
+結構必須依序寫完，不可缺步：
+1. 反差開頭：第一段就讓人物看起來冷淡、遲鈍、小氣或幫倒忙。
+2. 緊接著寫出三個具體的日常細節。用動作、物件和短對白，不要概括，也不要無關閒聊。
+3. 轉折落在長輩，或一段被重新理解的回憶。回憶只可短，不可整節倒敘。
+4. 用一件實物道具揭示真正的好意。這件道具必須在前半已經被讀者看見或使用，不可以在結尾才第一次出現。
+5. 結尾回到這件道具（callback）。最後一句只留一句短金句。金句必須從這件道具長出來，用畫面或對白，不可解釋道理。
+
+- 不說教，不把道理講破。禁止「有時候」「原來」「這件事讓我明白」。
+- 不直述感情。禁止「他很愛她」「她很感動」「其實他一直很關心」。感情只通過物件、動作和沒說出口的話。
+- 本線硬性禁止：失蹤、車禍、警察、猝死、產權、商戰、開放結局。
+- 短篇必須收口：開頭的問題有答案，最後一段同時完成道具 callback 與一句短金句。
+`;
+
+export const LANES: Lane[] = [
   {
     key: "shuangwen",
     name: "爽文逆襲",
@@ -608,6 +631,33 @@ const LANES: Lane[] = [
       "機場廣播說所有航班延誤。我回頭，看見十年沒見的她，手上提著跟我同一款的行李箱。",
     ],
   },
+  {
+    key: "kanbujian",
+    name: "看不見的好",
+    weight: 2, // 其他 short 線中位／多數權重係 2；會入每日 short 輪換。?lane=kanbujian 仍然可以手動指定。
+    types: ["short"],
+    genres: ["溫情反轉"],
+    style: KANBUJIAN_STYLE,
+    premiseGuide:
+      "反差開頭（人物看起來冷淡、遲鈍或小氣）＋一件已經出場的具體實物＋一個讓人想知道這件東西最後代表什麼的問題。結局要收口，不可寫成開放結局。",
+    judgeHint:
+      "道具要在開局早出現，並讓人看出它會在最後一段 callback；結局要收口，不可開放。開局不可出現失蹤、車禍、警察、猝死、產權或商戰。",
+    angles: [
+      "被人當成冷淡的長輩，每天重複一個沒有人明白的小動作",
+      "店裡人人說老闆吝嗇，一個日常容器卻總在打烊前被補滿",
+      "家裡最慢的那個人，在急事裡做對了別人忘掉的一件事",
+      "孩子以為父母不識字就不關心學業，直到一幅畫把話補上",
+      "多年不被道謝的鄰居，留下一樣對方天天用得上的東西",
+      "被笑幫倒忙的人，記得所有人忽略的細節",
+      "攤主被嫌小氣，磅秤底下壓著一疊替街坊記的帳",
+      "母親從不說加油，卻把孩子的工牌天天擦乾淨",
+    ],
+    seeds: [
+      "《他不識字》：阿昌不識字，年邁仍在世；女兒在衣櫃底找到一盒用畫寫成的信。",
+      "《慢半拍》：父親入院那晚只有他不慌，記得帶父親最愛的杯子。",
+      "《收銀機旁的撲滿》：撲滿裡全是老闆娘替街坊墊付的錢。",
+    ],
+  },
 ];
 
 // 敘事形式：每篇兩稿，B 稿有一半機會試唔同形式，交俾 AI 讀者評分決定邊個好睇
@@ -641,20 +691,9 @@ const NARRATIVE_FORMS = [
   },
 ];
 
-function pickWeighted<T extends { weight: number }>(arr: T[]): T {
-  const total = arr.reduce((s, x) => s + x.weight, 0);
-  let r = Math.random() * total;
-  for (const x of arr) {
-    r -= x.weight;
-    if (r <= 0) return x;
-  }
-  return arr[arr.length - 1];
-}
-
 function pickLane(storyType: StoryType, exclude: Set<LaneKey>): Lane {
-  const eligible = LANES.filter((l) => l.types.includes(storyType));
-  const pool = eligible.filter((l) => !exclude.has(l.key));
-  return pickWeighted(pool.length > 0 ? pool : eligible);
+  // 權重 0 唔入池；浮點貼近 1 時亦不可跌返一條權重 0 的尾線。
+  return pickLaneByWeight(LANES, storyType, exclude);
 }
 
 function castGenders(laneKey: LaneKey): [Gender, Gender] {
@@ -663,7 +702,7 @@ function castGenders(laneKey: LaneKey): [Gender, Gender] {
 }
 
 // 每條線容許嘅敘事形式（黑色幽默固定第一人稱，所以唔用第二人稱；serial 要停喺揭曉前，所以唔用倒敘）
-const LANE_FORMS: Record<LaneKey, string[]> = {
+export const LANE_FORMS: Record<LaneKey, string[]> = {
   shuangwen: ["normal", "flash_forward", "chat_log"],
   dark_humor: ["normal", "chat_log", "flash_forward"],
   warm_twist: ["normal", "chat_log", "flash_forward", "second_person", "letters", "diary", "third_person"],
@@ -672,10 +711,11 @@ const LANE_FORMS: Record<LaneKey, string[]> = {
   sweet_romcom: ["normal", "chat_log", "diary", "third_person"],
   cozy_shop: ["normal", "letters", "third_person"],
   reunion: ["normal", "letters", "flash_forward", "third_person"],
+  kanbujian: ["normal", "letters", "diary", "third_person"],
 };
 
 // A 稿預設一般敘事；非「我」本位嘅線有 40% 機會改用第三人稱，打破「篇篇都係我」
-const THIRD_PERSON_LANES: LaneKey[] = ["warm_twist", "high_concept", "trend_hook", "sweet_romcom", "reunion"];
+export const THIRD_PERSON_LANES: LaneKey[] = ["warm_twist", "high_concept", "trend_hook", "sweet_romcom", "reunion", "kanbujian"];
 
 function pickForm(lane: LaneKey, storyType: StoryType) {
   const keys = LANE_FORMS[lane].filter((k) => k !== "normal" && !(storyType === "serial" && k === "flash_forward"));
@@ -711,6 +751,7 @@ type StoryType = "serial" | "short";
 // 唔會 crash，只係舊資料唔會參與排除計算——可以接受，因為舊故事本身就係要淘汰嗰批。
 // 2026-10-04：加 lane（故事線）／angle（非爽文線切入點）／form（敘事形式）／judge（雙稿 AI 讀者評分）。
 // 爽文線先有 hook／stake；舊資料冇 lane，當爽文處理。
+// 2026-10-22：kanbujian 手動線額外寫 series（key／title／order）同 teaser。
 type JudgeRecord = {
   form: string;
   pass: boolean;
@@ -725,6 +766,11 @@ type JudgeRecord = {
   drop: string;
   picked: boolean;
 };
+type SeriesMeta = {
+  key: string;
+  title: string;
+  order: number;
+};
 type GenMeta = {
   lane?: LaneKey;
   hook?: HookKey;
@@ -734,6 +780,7 @@ type GenMeta = {
   form?: string;
   judge?: JudgeRecord[];
   teaser?: string;
+  series?: SeriesMeta;
 };
 
 // 排除近期用過嘅 Hook 引擎（10 個引擎，排除最近 5 個 → 保證兩星期內唔會撞同一個 hook）
@@ -790,6 +837,7 @@ function classifyValidateFail(note: string): FailType {
   if (note.startsWith("簡體字")) return "SIMPLIFIED";
   if (note.startsWith("粵語")) return "CANTONESE";
   if (note.startsWith("AI陳套")) return "CLICHE";
+  if (note.startsWith("道具未回收")) return "LOGIC";
   if (note.includes("沒有完整收尾")) return "CLOSURE_SHORT";
   if (note.includes("沒有停在抉擇")) return "CLOSURE_SERIAL";
   if (note.startsWith("開頭") || note.includes("看不懂")) return "OPEN";
@@ -835,6 +883,9 @@ function failInstruction(failType: FailType, storyType: StoryType, reason: strin
     case "OPEN":
       return "只改第一節前約 300 字。用平白句子交代主角是誰、在哪裡、想要什麼、眼前發生什麼事；禁止未說明的指代。後面各節不要改。";
     case "LOGIC":
+      if (reason.includes("道具未回收")) {
+        return "補上實物道具：道具必須在前半已經出現，最後一段 callback；結局收口。不說教，不直述感情，不要改成開放結局。只改道具出場那一筆和最後一段，不要另起一個故事。";
+      }
       return "只修邏輯與伏筆回收：去掉前後矛盾，補上動機，讓線索在結尾前回收，情節要說得通。不要重寫整篇。";
     case "PREMISE_TENSION":
     case "PREMISE_LANE":
@@ -1014,15 +1065,21 @@ async function generateTeaser(content: string, title: string): Promise<string> {
 }
 
 // 輕量 DeepSeek 自我檢查：closure(short)/cliffhanger(serial) 呢啲要閱讀理解嘅檢查，code 做唔到
-async function selfCheckClosure(content: string, storyType: StoryType): Promise<boolean> {
+async function selfCheckClosure(content: string, storyType: StoryType, laneKey?: LaneKey): Promise<boolean> {
   const question =
     storyType === "short"
       ? "以下短篇故事的結局是否完整收尾（衝突有結果、疑問有答案、情緒已經落地；餘韻式或安靜的收尾也算合格，只要沒有留下未回答的核心懸念）？若結尾在說教或總結人生道理（例如「有時候」「原來」「好運非零和」），回答不合格。"
       : "以下連載故事的結尾是否停在一個可續寫的節點：讀者能想到至少兩種不同的下一步，而且下一步是具體的選擇、即將說出的話，或正在發生的動作？已經完整解決整個衝突，回答不合格。只留下「權限／計畫／真相還沒交代」這類沒有下一步的空懸，也回答不合格。";
+  const extra =
+    laneKey === "kanbujian"
+      ? `\n另外必須同時滿足，缺一不可：${KANBUJIAN_CLOSURE_CHECK}任何一項不滿足都回答不合格。`
+      : "";
+  const excerpt = laneKey === "kanbujian" ? content : content.slice(-600);
+  const label = laneKey === "kanbujian" ? "故事全文" : "故事結尾部分";
   const raw = await deepseekChat(
     [
       { role: "system", content: "你是嚴格的編輯，只回答「合格」或「不合格」，不要加任何其他文字。" },
-      { role: "user", content: `${question}\n\n故事結尾部分：\n${content.slice(-600)}` },
+      { role: "user", content: `${question}${extra}\n\n${label}：\n${excerpt}` },
     ],
     { model: "deepseek-chat", temperature: 0, maxTokens: 10, timeoutMs: 30_000 }
   );
@@ -1132,6 +1189,9 @@ async function generateLanePremise(
     `- 必須是「正在發生」的場面，不是背景設定。\n` +
     `- 讀完要讓人立刻冒出一個具體問題，而且很想知道答案。\n` +
     `- 必須一次看懂：交代清楚誰、在做什麼、發生什麼事；不可以用「那句話」「那件事」這類沒說明的指代；奇想規則要簡單到一句話講完，禁止數字額度、次數換算之類的機制。\n` +
+    (lane.key === "kanbujian"
+      ? `- 開局必須已經看見一件具體實物。全文會走：反差開頭、三個具體日常細節、長輩或回憶轉折、實物道具揭示、結尾道具 callback 加一句短金句。不說教，不直述感情。禁止失蹤、車禍、警察、猝死、產權、商戰、開放結局。\n`
+      : "") +
     `${SHARED_BANS}\n` +
     `【張力標尺（示範這個吸引力水平，但嚴禁抄襲它的情節、職業、場景或對白）】\n${lane.seeds.join("\n")}`;
   const userMsg =
@@ -1152,12 +1212,16 @@ async function generateLanePremise(
 }
 
 async function judgeLanePremise(premise: string, lane: Lane): Promise<PremiseJudge> {
+  const hint =
+    lane.key === "kanbujian"
+      ? `${lane.judgeHint}這是開局審查：只確認道具已經出場、禁題沒有出現。最後一段 callback 與收口由全文自檢，不要因為開局還沒寫到結局而判不合格。`
+      : lane.judgeHint;
   const prompt =
     `以下是一個「${lane.name}」類網絡小說的開局。請嚴格評估它能不能讓普通讀者想繼續看下去。\n\n` +
     `合格條件（必須全部滿足）：\n` +
     `1. 是正在發生的場面，不是背景交代\n` +
     `2. 讀完會冒出一個具體、想知道答案的問題\n` +
-    `3. ${lane.judgeHint}\n` +
+    `3. ${hint}\n` +
     `4. 一次就能看懂：沒有未說明的指代，規則或設定簡單清楚，不靠數字額度\n` +
     `5. 沒有失蹤、車禍、警察、殯儀館、猝死，也沒有產權、法院拍賣、授權書、標金這類商戰\n\n` +
     `開局：「${premise}」\n\n` +
@@ -1211,7 +1275,11 @@ function insertReadMarks(content: string): string {
   return out.join("\n");
 }
 
-async function readerJudge(content: string): Promise<ReaderScore | null> {
+async function readerJudge(content: string, laneKey?: LaneKey): Promise<ReaderScore | null> {
+  const kanbujianNote =
+    laneKey === "kanbujian"
+      ? `本篇是「看不見的好」。${KANBUJIAN_CLOSURE_CHECK}生活實物的 callback 是指定寫法，不要因為「用物件揭示心意」而把 logic 打低。若道具太晚才第一次出現、最後一段沒有 callback、結局開放、或用道理代替金句，logic 低於 6 分。失蹤、車禍、警察、猝死、產權、商戰仍然一律低於 6 分。\n`
+      : "";
   const prompt =
     `你是一個每天在手機上看網絡小說的普通讀者，口味挑剔、很容易棄書：一覺得悶、看不懂、不相信，就會立刻關掉。\n` +
     `下面的故事中插入了【讀者位置 25%】【讀者位置 50%】【讀者位置 75%】三個標記。\n` +
@@ -1219,7 +1287,9 @@ async function readerJudge(content: string): Promise<ReaderScore | null> {
     `評分要嚴格：普通的故事只值 5-6 分，只有真正讓人停不下來的才給 8 分以上。\n\n` +
     `另外請再做兩項「看不看得懂」檢查（1-10 分，嚴格）：\n` +
     `- open：只看開頭約 300 字，你能不能清楚說出誰在哪裡、發生什麼事、特殊規則是什麼？有未說明的指代（如「那句話」）或一頭霧水就低於 6 分。\n` +
-    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？情節在現實中是否說得通（例如簽名可以被重複使用就是不通）？標題講的畫面是否真的在故事裡發生？結尾若出現說教式總結道理（例如「有時候」「原來」「好運非零和」）、或真相靠翻舊紀錄／證物揭曉、或內容屬命案懸疑、失蹤、車禍、警察、殯儀館、猝死、產權法院拍賣、記憶買賣，logic 一律低於 6 分。連載若結尾只留「權限／計畫未交代」而沒有下一步行動，logic 也低於 6 分。有明顯矛盾或沒回收也低於 6 分。\n\n` +
+    `- logic：全文設定有沒有前後矛盾（規則、次數、時間線）、人物反常行為有沒有鋪墊動機、神秘線索有沒有回收、結局有沒有交代清楚？情節在現實中是否說得通（例如簽名可以被重複使用就是不通）？標題講的畫面是否真的在故事裡發生？結尾若出現說教式總結道理（例如「有時候」「原來」「好運非零和」）、或真相靠翻舊紀錄／證物揭曉、或內容屬命案懸疑、失蹤、車禍、警察、殯儀館、猝死、產權法院拍賣、記憶買賣，logic 一律低於 6 分。連載若結尾只留「權限／計畫未交代」而沒有下一步行動，logic 也低於 6 分。有明顯矛盾或沒回收也低於 6 分。\n` +
+    kanbujianNote +
+    `\n` +
     `${insertReadMarks(content)}\n\n` +
     `只輸出 JSON，不要其他文字：{"p25":分數,"p50":分數,"p75":分數,"end":分數,"open":分數,"logic":分數,"issue":"最大的看不懂之處，25 字內","drop":"最可能棄書的位置與原因，20 字內"}`;
   try {
@@ -1263,7 +1333,8 @@ async function writeDraft(
   form: (typeof NARRATIVE_FORMS)[number],
   temperature: number,
   deadline: number,
-  hardEnd: number
+  hardEnd: number,
+  laneKey?: LaneKey
 ): Promise<Draft> {
   const firstMsg = `${baseUserMsg}\n\n【敘事形式】${form.instruction}`;
   let userMsg = firstMsg;
@@ -1289,9 +1360,9 @@ async function writeDraft(
     const n = sectionCount(content);
     if (n < 4 || n > 6) fails.push(`分節數不對（${n}節，要4-5節，用單獨一行${SECTION_MARK}分隔）`);
     if (fails.length === 0) {
-      const closureOk = await selfCheckClosure(content, storyType).catch(() => true);
+      const closureOk = await selfCheckClosure(content, storyType, laneKey).catch(() => true);
       if (closureOk) return { content, pass: true, validateNote: "PASS", retries: attempt, form: form.key, score: null };
-      fails.push(storyType === "short" ? "沒有完整收尾" : "沒有停在抉擇節點");
+      fails.push(closureFailNote(storyType, laneKey));
     }
     retries = attempt + 1;
     validateNote = fails.join("；");
@@ -1307,7 +1378,8 @@ async function repairDraft(
   systemMsg: string,
   d: Draft,
   storyType: StoryType,
-  hardEnd: number
+  hardEnd: number,
+  laneKey?: LaneKey
 ): Promise<Draft | null> {
   const hits = groupFails(d.validateNote && d.validateNote !== "PASS" ? d.validateNote.split("；") : []);
   if (d.score && d.score.open < 6 && !hits.some((h) => h.failType === "OPEN")) {
@@ -1315,6 +1387,14 @@ async function repairDraft(
   }
   if (d.score && d.score.logic < 6 && !hits.some((h) => h.failType === "LOGIC")) {
     hits.push({ failType: "LOGIC", reason: `邏輯或伏筆不足：${d.score.issue || "前後矛盾或線索沒有回收"}` });
+  }
+  if (laneKey === "kanbujian") {
+    const propReason = closureFailNote(storyType, laneKey);
+    const logic = hits.find((h) => h.failType === "LOGIC");
+    if (logic && !logic.reason.includes("道具未回收")) logic.reason = `${logic.reason}、${propReason}`;
+    else if (!logic && (d.validateNote.includes("道具未回收") || (d.score && d.score.logic < 6))) {
+      hits.push({ failType: "LOGIC", reason: propReason });
+    }
   }
   if (hits.length === 0) hits.push({ failType: "OTHER", reason: d.score?.issue || "設定交代不清" });
   const userMsg =
@@ -1335,10 +1415,10 @@ async function repairDraft(
     const n = sectionCount(c);
     if (n < 4 || n > 6) fails.push(`分節數不對（${n}節）`);
     if (fails.length === 0) {
-      const closureOk = await selfCheckClosure(c, storyType).catch(() => true);
-      if (!closureOk) fails.push(storyType === "short" ? "沒有完整收尾" : "沒有停在抉擇節點");
+      const closureOk = await selfCheckClosure(c, storyType, laneKey).catch(() => true);
+      if (!closureOk) fails.push(closureFailNote(storyType, laneKey));
     }
-    const score = await readerJudge(c);
+    const score = await readerJudge(c, laneKey);
     return { content: c, pass: fails.length === 0, validateNote: fails.length ? fails.join("；") : "PASS", retries: d.retries + 1, form: `${d.form}+repair`, score };
   } catch {
     return null;
@@ -1351,7 +1431,8 @@ async function generateOne(
   recentTitles: string[],
   cast: [string, string],
   recentMetas: GenMeta[],
-  forcedHook?: HookEngine
+  forcedHook?: HookEngine,
+  seriesOrder?: number
 ): Promise<{
   genre: string;
   title: string;
@@ -1439,6 +1520,18 @@ async function generateOne(
     genMeta = { lane: lane.key, angle, premise };
     systemMsg = `${SHARED_BANS}\n${lane.style}\n${COMMON_READ_THROUGH}`;
     laneLine = `【故事線】${lane.name}\n【切入點】${angle}\n主要人物：${mainName}、${sideName}（必須使用這兩個姓名，不要改名；不一定要寫成愛情）。`;
+    if (lane.key === "kanbujian") {
+      laneLine +=
+        "\n【本線結構】反差開頭，然後三個具體日常細節，再轉到長輩或回憶，用早已出場的實物揭示好意。最後一段 callback 這件道具，並以一句短金句收口。不說教，不直述感情。禁止失蹤、車禍、警察、猝死、產權、商戰、開放結局。";
+    }
+  }
+
+  if (lane.key === "kanbujian") {
+    genMeta.series = {
+      key: "kanbujian",
+      title: "看不見的好",
+      order: seriesOrder ?? nextSeriesOrder(recentMetas, "kanbujian"),
+    };
   }
 
   const stillBlocked = premiseBlockReason(premise);
@@ -1464,8 +1557,8 @@ async function generateOne(
   const deadline = t0 + 110_000; // 過咗呢個時間就唔重寫（長文一次要 2-3 分鐘）
   const hardEnd = t0 + 215_000; // 單次生成最遲收尾時間，留 ~80 秒俾評分＋標題
   const draftResults = await Promise.allSettled([
-    writeDraft(systemMsg, baseUserMsg, storyType, formA, 1.0, deadline, hardEnd),
-    writeDraft(systemMsg, baseUserMsg, storyType, formB, 1.1, deadline, hardEnd),
+    writeDraft(systemMsg, baseUserMsg, storyType, formA, 1.0, deadline, hardEnd, lane.key),
+    writeDraft(systemMsg, baseUserMsg, storyType, formB, 1.1, deadline, hardEnd, lane.key),
   ]);
   const drafts = draftResults
     .filter((r): r is PromiseFulfilledResult<Draft> => r.status === "fulfilled")
@@ -1477,7 +1570,7 @@ async function generateOne(
   }
 
   // ---- AI 讀者評分（兩稿並行），優先揀過驗收嘅，再揀分高 ----
-  const scores = await Promise.all(drafts.map((d) => readerJudge(d.content)));
+  const scores = await Promise.all(drafts.map((d) => readerJudge(d.content, lane.key)));
   drafts.forEach((d, i) => (d.score = scores[i]));
   // 睇唔睇得明：open／logic 任何一項 <6 視為「看不懂」。優先揀看得懂＋過驗收，再揀分高。
   const clear = (d: Draft) => !d.score || (d.score.open >= 6 && d.score.logic >= 5);
@@ -1499,7 +1592,7 @@ async function generateOne(
       .filter((d) => !d.validateNote.includes("簡體字"))
       .sort((a, b) => (b.score?.total ?? -1) - (a.score?.total ?? -1))[0];
     for (let round = 0; round < 2 && cur && Date.now() < t0 + 170_000; round++) {
-      const fixed = await repairDraft(systemMsg, cur, storyType, t0 + 250_000);
+      const fixed = await repairDraft(systemMsg, cur, storyType, t0 + 250_000, lane.key);
       if (!fixed) break;
       drafts.push(fixed);
       if (usable(fixed)) {
@@ -1552,6 +1645,24 @@ async function generateOne(
   };
 }
 
+async function loadKanbujianOrder(
+  supabase: ReturnType<typeof admin>,
+  recentMetas: GenMeta[]
+): Promise<number> {
+  const collected: GenMeta[] = [...recentMetas];
+  const { data, error } = await supabase
+    .from("novel_stories")
+    .select("gen_meta")
+    .contains("gen_meta", { series: { key: "kanbujian" } });
+  if (!error && data) {
+    for (const row of data) {
+      const meta = row.gen_meta as GenMeta | null;
+      if (meta) collected.push(meta);
+    }
+  }
+  return nextSeriesOrder(collected, "kanbujian");
+}
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -1598,24 +1709,33 @@ export async function GET(req: NextRequest) {
 
   // 2026-10-04：故事線——同一個 run 兩篇一定唔同線，並盡量避開上一個 run 用過嘅線。
   // 可以用 ?lane=dark_humor 之類強制指定（淨係方便人手測試；cron 唔會帶）。
+  // kanbujian 權重 2，short 日常輪換會抽中；?lane=kanbujian 仍然有效。serial 冇呢條。
   const dryRun = req.nextUrl.searchParams.get("dry") === "1";
-  const forceLane = LANES.find((l) => l.key === req.nextUrl.searchParams.get("lane"));
+  const requestedLane = req.nextUrl.searchParams.get("lane");
   const laneExclude = recentLanes(recentMetas);
-  const laneForShort = forceLane && forceLane.types.includes("short") ? forceLane : pickLane("short", laneExclude);
+  const laneForShort = resolveForcedLane(LANES, requestedLane, "short") ?? pickLane("short", laneExclude);
   const laneForSerial =
-    forceLane && forceLane.types.includes("serial")
-      ? forceLane
-      : pickLane("serial", new Set([...laneExclude, laneForShort.key]));
+    resolveForcedLane(LANES, requestedLane, "serial") ??
+    pickLane("serial", new Set([...laneExclude, laneForShort.key]));
 
   const shortCast = assignCharacterPair(nameBlock, castGenders(laneForShort.key));
   const serialCast = assignCharacterPair(nameBlock, castGenders(laneForSerial.key));
+  const kanbujianBase =
+    laneForShort.key === "kanbujian" || laneForSerial.key === "kanbujian"
+      ? await loadKanbujianOrder(supabase, recentMetas)
+      : undefined;
+  const seriesOrderFor = (storyType: StoryType, lane: Lane): number | undefined => {
+    if (lane.key !== "kanbujian" || kanbujianBase == null) return undefined;
+    if (storyType === "serial" && laneForShort.key === "kanbujian") return kanbujianBase + 1;
+    return kanbujianBase;
+  };
 
   const settled = await Promise.allSettled(
     ([
       ["short", laneForShort, hookForShort, shortCast],
       ["serial", laneForSerial, hookForSerial, serialCast],
     ] as [StoryType, Lane, HookEngine, [string, string]][]).map(([storyType, lane, forcedHook, cast]) =>
-      generateOne(storyType, lane, recentTitles, cast, recentMetas, forcedHook).then(
+      generateOne(storyType, lane, recentTitles, cast, recentMetas, forcedHook, seriesOrderFor(storyType, lane)).then(
         (story) => ({ storyType, story })
       )
     )
@@ -1654,6 +1774,8 @@ export async function GET(req: NextRequest) {
       angle: story.genMeta.angle ?? null,
       form: story.genMeta.form,
       premise: story.genMeta.premise,
+      series: story.genMeta.series ?? null,
+      teaser: story.genMeta.teaser ?? null,
       judge: story.genMeta.judge,
       retries: story.retries,
       validateNote: story.validateNote,
