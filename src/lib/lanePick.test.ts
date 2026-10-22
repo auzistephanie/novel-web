@@ -72,10 +72,14 @@ describe("series order", () => {
 describe("kanbujian lane", () => {
   const lane = LANES.find((item) => item.key === "kanbujian");
 
-  it("is a manual-only short lane in the existing warm genre", () => {
+  it("uses the median short-lane weight and the existing warm genre", () => {
     assert.ok(lane);
     assert.equal(lane?.name, "看不見的好");
-    assert.equal(lane?.weight, 0);
+    const otherShort = LANES.filter((item) => item.key !== "kanbujian" && item.types.includes("short")).map((item) => item.weight).sort((a, b) => a - b);
+    const mid = Math.floor(otherShort.length / 2);
+    const median = otherShort.length % 2 === 0 ? (otherShort[mid - 1] + otherShort[mid]) / 2 : otherShort[mid];
+    assert.equal(median, 2);
+    assert.equal(lane?.weight, median);
     assert.deepEqual(lane?.types, ["short"]);
     assert.deepEqual(lane?.genres, ["溫情反轉"]);
     assert.ok(lane && lane.angles.length >= 3);
@@ -107,7 +111,7 @@ describe("kanbujian lane", () => {
     assert.equal(closureFailNote("serial"), "沒有停在抉擇節點");
   });
 
-  it("has a form list and is excluded from both random rotations", () => {
+  it("can be picked in the daily short rotation, and ?lane= still works", () => {
     for (const item of LANES) {
       assert.ok(LANE_FORMS[item.key]?.includes("normal"), item.key);
     }
@@ -115,16 +119,23 @@ describe("kanbujian lane", () => {
     assert.ok(THIRD_PERSON_LANES.includes("kanbujian"));
     assert.equal(resolveForcedLane(LANES, "kanbujian", "short")?.key, "kanbujian");
     assert.equal(resolveForcedLane(LANES, "kanbujian", "serial"), null);
-    for (const storyType of ["short", "serial"] as const) {
-      for (let i = 0; i < 80; i++) {
-        const picked = pickLaneByWeight(LANES, storyType, new Set());
-        assert.notEqual(picked.key, "kanbujian");
-        assert.ok(picked.weight > 0);
-        assert.ok(picked.types.includes(storyType));
-      }
+
+    const otherShort = LANES.filter((item) => item.types.includes("short") && item.key !== "kanbujian").map((item) => item.key);
+    assert.equal(pickLaneByWeight(LANES, "short", new Set(otherShort)).key, "kanbujian");
+
+    let shortHits = 0;
+    for (let i = 0; i < 400; i++) {
+      const picked = pickLaneByWeight(LANES, "short", new Set());
+      if (picked.key === "kanbujian") shortHits += 1;
+      assert.ok(picked.weight > 0);
+      assert.ok(picked.types.includes("short"));
     }
-    const positiveShort = LANES.filter((item) => item.types.includes("short") && item.weight > 0).map((item) => item.key);
-    const fallback = pickLaneByWeight(LANES, "short", new Set(positiveShort));
-    assert.notEqual(fallback.key, "kanbujian");
+    assert.ok(shortHits > 0);
+
+    for (let i = 0; i < 80; i++) {
+      const picked = pickLaneByWeight(LANES, "serial", new Set());
+      assert.notEqual(picked.key, "kanbujian");
+      assert.ok(picked.types.includes("serial"));
+    }
   });
 });

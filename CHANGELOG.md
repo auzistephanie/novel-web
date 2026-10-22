@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-22**：**「看不見的好」改入每日 short 輪換（權重 0 → 2）** 起因：Stephanie 要呢條線日常都會被抽中，唔再只靠人手 `?lane=`。
+  **修**（`route.ts`、`lanePick.test.ts`）：其他可出 short 的線權重係 2 或 3（8 條：六個 2、兩個 3），中位數同最常見都係 2，所以 `kanbujian` 用 2。short 池總權重 20，大約每 10 日抽中 1 次。`?lane=kanbujian` 維持有效；serial 仍然冇呢條。權重 0 的抽選排除留喺 `lanePick.ts`，呢條線唔再使用。
+  **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。
+
 - **2026-10-22**：**新增故事線「看不見的好」（`kanbujian`，權重 0）** 起因：要一條溫情短篇線，日常輪換唔好抽中，只可以由人手 `?lane=kanbujian` 觸發。冇加系列頁或新 UI。
   **修**（`route.ts`、`src/lib/lanePick.ts`）：① 新 lane：genre「溫情反轉」、`story_type` short、文風係反差開頭 → 三個日常細節 → 長輩／回憶轉折 → 實物揭示 → 結尾道具 callback 加一句短金句；不說教、不直述感情。② 本線禁止失蹤、車禍、警察、猝死、產權／商戰、開放結局。③ 三條 seed：《他不識字》《慢半拍》《收銀機旁的撲滿》。④ 權重 0 喺抽選時直接剔走，`Math.random` 貼近 1 都唔會跌返呢條；`?lane=kanbujian` 仍然可以出 short，serial 繼續用其他線。⑤ 寫入 `gen_meta.series = {key:"kanbujian", title:"看不見的好", order}`，order 係呢個系列下一個序號；`teaser` 沿用原有一句話簡介。⑥ 開局審查只確認道具已出場；全文自檢同讀者 logic 先驗最後一段 callback 同收口。生活實物 callback 唔當「翻舊紀錄揭秘」扣分。
   **核實**：`tsc --noEmit` 過；`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`（18 項過）；`npm run build` 過。未跑 production cron，未 merge。

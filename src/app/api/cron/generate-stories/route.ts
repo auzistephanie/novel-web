@@ -634,7 +634,7 @@ export const LANES: Lane[] = [
   {
     key: "kanbujian",
     name: "看不見的好",
-    weight: 0, // 唔入每日輪換；只可以由 ?lane=kanbujian 手動觸發
+    weight: 2, // 其他 short 線中位／多數權重係 2；會入每日 short 輪換。?lane=kanbujian 仍然可以手動指定。
     types: ["short"],
     genres: ["溫情反轉"],
     style: KANBUJIAN_STYLE,
@@ -692,7 +692,7 @@ const NARRATIVE_FORMS = [
 ];
 
 function pickLane(storyType: StoryType, exclude: Set<LaneKey>): Lane {
-  // 權重 0（kanbujian）唔入池；Math.random 貼近 1 時亦不可跌返最後一條。
+  // 權重 0 唔入池；浮點貼近 1 時亦不可跌返一條權重 0 的尾線。
   return pickLaneByWeight(LANES, storyType, exclude);
 }
 
@@ -1709,7 +1709,7 @@ export async function GET(req: NextRequest) {
 
   // 2026-10-04：故事線——同一個 run 兩篇一定唔同線，並盡量避開上一個 run 用過嘅線。
   // 可以用 ?lane=dark_humor 之類強制指定（淨係方便人手測試；cron 唔會帶）。
-  // 權重 0 的 kanbujian 唔會被 pickLane 抽中；?lane=kanbujian 先會出 short。
+  // kanbujian 權重 2，short 日常輪換會抽中；?lane=kanbujian 仍然有效。serial 冇呢條。
   const dryRun = req.nextUrl.searchParams.get("dry") === "1";
   const requestedLane = req.nextUrl.searchParams.get("lane");
   const laneExclude = recentLanes(recentMetas);
