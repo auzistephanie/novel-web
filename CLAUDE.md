@@ -18,7 +18,7 @@ Next.js 16（App Router + TypeScript + Tailwind v4）。Supabase `cmtubaxlniglkl
 
 結局：`EndingFlow.tsx` → `getChoices` → `generateEnding`（400–700字，insert 唔 upsert）。
 
-Cron：`vercel.json` `"30 4 * * *"`（HKT 12:30）每日 1 serial + 1 short。8 條 `LANES`，雙稿＋`readerJudge`；`＊＊＊` 分節。`gen_meta`＝`{lane,angle?,premise,form,judge,teaser}`。`?dry=1&lane=` 唔寫 DB。舊 skill `novel-story-generator` 已死，改 `route.ts`。
+Cron：`vercel.json` `"30 4 * * *"`（HKT 12:30）每日 1 serial + 1 short。9 條 `LANES`（`kanbujian`「看不見的好」權重 0，只可由 `?lane=kanbujian` 出 short）。雙稿＋`readerJudge`；`＊＊＊` 分節。`gen_meta`＝`{lane,angle?,premise,form,judge,teaser,series?}`。`?dry=1&lane=` 唔寫 DB。舊 skill `novel-story-generator` 已死，改 `route.ts`。
 
 上線：https://novel-web-sepia.vercel.app 。`dependencies` 唔可以有 `@next/swc-linux-*-gnu`／`lightningcss-*`。
 
