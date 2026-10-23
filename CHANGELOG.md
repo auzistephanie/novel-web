@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-23**：**暖線標題收短到 10–14 字、一逗到底** 起因：Stephanie 收窄上一條 12–22 字規則。`kanbujian`／`warm_twist`／`cozy_shop` 要短對比題，唔好長句。
+  **修**（`route.ts`、`storyQuality.ts`）：發表標題必須 10–14 字（標點不算）。2–6 字散文題或單純名詞仍然不發佈；超過 14 字（包括超過 15 字的長句）喺呢三條線過唔到 `titleFormatFails`。句式必須一逗到底：前半句反差或嫌棄，後半句反常動作或懸念，唔劇透尾段真相。`kanbujian` 六條切入點同 seed 改為 13–14 字標準示範。指定切入點仍然必須照寫，同題示範唔當禁題。
+  **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。
+
 - **2026-10-23**：**暖線標題改強鉤子，禁 2–6 字平淡題** 起因：Stephanie 要 `kanbujian`／`warm_twist`／`cozy_shop` 嘅標題第一眼就好奇「點解會咁」，唔好再出《慢半拍》《他不識字》呢類短散文題。
   **修**（`route.ts`、`storyQuality.ts`）：① 任何線嘅 2–6 字散文題或單純名詞都過唔到 `titleFormatFails`，fallback 唔發佈，會先重試。② 上述三條線必須係 12–22 字，而且要有「表面嫌棄或誤會＋反常具體舉動／物件」嘅轉折（逗號，或「卻／直到／其實／才發現」）；呢個句式唔再因為連續兩截句被打回頭。③ `kanbujian` 六條具體切入點同 seed 改成強鉤子示範。示範可以長過 22 字，發表標題仍要壓短，而且唔寫完第 3–4 節真相。開局 prompt 寫明：指定切入點必須照寫；同一切入點嘅示範唔係禁題，其餘示範嘅情節、職業、場景不可照抄。六條示範只用繁體「給／著／帳」。
   **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。

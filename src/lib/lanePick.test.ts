@@ -176,7 +176,7 @@ describe("generation prompts", () => {
     const assigned = KANBUJIAN_HOOKS[0];
     const kanPrompt = buildLanePremiseSystem(kanbujian, assigned);
     assert.match(kanPrompt, /今次指定的切入點（必須用）/);
-    assert.match(kanPrompt, /連菜單都看不懂的爸，衣櫃底卻鎖著三十封給我的信/);
+    assert.match(kanPrompt, /不識字的爸，衣櫃鎖著三十封信/);
     assert.match(kanPrompt, /不得把該示範當成禁題/);
     assert.match(kanPrompt, /其餘示範的情節、職業、場景或對白不可照抄/);
     assert.equal(kanPrompt.includes("嚴禁抄襲它的情節、職業、場景"), false);
@@ -186,7 +186,7 @@ describe("generation prompts", () => {
     const genericPrompt = buildLanePremiseSystem(kanbujian, "被人當成冷淡的長輩，每天重複一個沒有人明白的小動作");
     assert.match(genericPrompt, /切入點必須照寫/);
     assert.match(genericPrompt, /不得把該示範當成禁題/);
-    assert.match(genericPrompt, /衣櫃底卻鎖著三十封給我的信/);
+    assert.match(genericPrompt, /不識字的爸，衣櫃鎖著三十封信/);
 
     const title = buildTitleSystem();
     assert.match(title, /標題只可取材自第 1–2 節已出現的設定與動作/);
@@ -199,16 +199,19 @@ describe("generation prompts", () => {
     assert.equal(title.includes("實習生"), false);
 
     const kanTitle = buildTitleSystem("kanbujian");
-    assert.match(kanTitle, /12–22 字/);
-    assert.match(kanTitle, /表面嫌棄或誤會/);
-    assert.match(kanTitle, /衣櫃底卻鎖著三十封給我的信/);
-    assert.equal(titleGlyphCount(KANBUJIAN_HOOKS[0]), 22);
-    assert.deepEqual(titleFormatFails(KANBUJIAN_HOOKS[0], "kanbujian"), []);
-    assert.match(titleFormatFails(KANBUJIAN_HOOKS[3], "kanbujian").join("\n"), /標題長度/);
+    assert.match(kanTitle, /10–14 字/);
+    assert.match(kanTitle, /一逗到底/);
+    assert.match(kanTitle, /不識字的爸，衣櫃鎖著三十封信/);
+    assert.equal(kanTitle.includes("連菜單都看不懂的爸"), false);
+    for (const hook of KANBUJIAN_HOOKS) {
+      const count = titleGlyphCount(hook);
+      assert.ok(count >= 13 && count <= 14, `${hook}:${count}`);
+      assert.deepEqual(titleFormatFails(hook, "kanbujian"), [], hook);
+    }
 
     const warmTitle = buildTitleSystem("warm_twist");
-    assert.match(warmTitle, /12–22 字/);
-    assert.match(warmTitle, /表面嫌棄或誤會/);
+    assert.match(warmTitle, /10–14 字/);
+    assert.match(warmTitle, /一逗到底/);
     assert.equal(warmTitle.includes("衣櫃"), false);
     assert.equal(warmTitle.includes("舊電扇"), true);
   });
