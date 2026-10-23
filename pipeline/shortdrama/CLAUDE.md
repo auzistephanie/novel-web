@@ -27,6 +27,10 @@ brew install ffmpeg               # assemble.py 需要
 
 讀 `novel_stories` 唔經呢個repo嘅任何本機檔案——直接用Supabase MCP query project `cmtubaxlniglklmdwlzs`(同novel-web共用)。Storyboard入面`source.story_id`可以循Supabase查返原文對照。
 
+## 語言
+
+所有腳本旁白（narration）、對白（dialogue）、字幕必須全書面語，嚴禁粵語口語。
+
 ## 推送
 
 跟 repo 根 `scripts/github_push.py`,冇獨立push機制。`output/`同`.env`已gitignore,唔會上repo(片太大)。
