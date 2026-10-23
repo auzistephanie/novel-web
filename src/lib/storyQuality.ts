@@ -82,7 +82,22 @@ export const QUALITY_REPAIR = {
     "只重寫尾節。連載必須留下可續的下一步：一個具體選擇、一句即將說出口的話、或一個正在發生的動作。禁止用「權限／計畫／真相還沒交代」這種沒有下一步的空懸，也不要一次解決整個衝突。前面各節不要改。",
 } as const;
 
-const PUBLICATION_BLOCK_MARKERS = ["簡體字", "商戰詞", "禁題", "說教結尾", "空懸結尾", "沒有停在抉擇節點"] as const;
+const PUBLICATION_BLOCK_MARKERS = [
+  "簡體字",
+  "商戰詞",
+  "禁題",
+  "說教結尾",
+  "空懸結尾",
+  "沒有停在抉擇節點",
+  "沒有完整收尾",
+  "道具未回收",
+  "分節數不對",
+  "字數不足",
+  "粵語詞",
+  "AI陳套詞",
+  "大陸詞",
+  "第一人稱",
+] as const;
 
 export function isHardBlocked(validateNote: string): boolean {
   return PUBLICATION_BLOCK_MARKERS.some((marker) => validateNote.includes(marker));
@@ -260,14 +275,15 @@ export function extractUsedNames(text: string): string[] {
   return [...new Set(text.match(re) ?? [])];
 }
 
-function remember(block: NameBlock, full: string, sameDay: boolean) {
+function remember(block: NameBlock, full: string, blockGiven: boolean) {
   const name = full.trim();
   if (name.length < 2 || name.length > 4) return;
   block.full.add(name);
   const surname = name[0] ?? "";
   const given = name.slice(1);
   if (surname) block.recentSurnames.add(surname);
-  if (sameDay && given) block.givenToday.add(given);
+  // givenToday 係近 14 日要避開的名字集合：主角名字整段窗口都擋，其餘名字仍只擋當日。
+  if (blockGiven && given) block.givenToday.add(given);
 }
 
 export function nameBlockFromStories(stories: RecentNameSource[], now: Date): NameBlock {
@@ -277,9 +293,11 @@ export function nameBlockFromStories(stories: RecentNameSource[], now: Date): Na
     if (!isWithinDays(story.created_at, now, 14)) continue;
     const created = story.created_at ? new Date(story.created_at) : now;
     const sameDay = !story.created_at || !Number.isFinite(created.getTime()) || hktDayKey(created) === today;
+    const protagonists = protagonistNames(story.protagonist);
+    const protagonistSet = new Set(protagonists);
     const blob = [story.title, story.content, story.premise].filter(Boolean).join("\n");
-    const names = new Set<string>([...protagonistNames(story.protagonist), ...extractUsedNames(blob)]);
-    for (const name of names) remember(block, name, sameDay);
+    const names = new Set<string>([...protagonists, ...extractUsedNames(blob)]);
+    for (const name of names) remember(block, name, protagonistSet.has(name) || sameDay);
   }
   return block;
 }
@@ -310,10 +328,208 @@ function takeName(gender: Gender, block: NameBlock, rng: () => number): string {
   const preferred = candidateNames(gender, block, true);
   const pool = preferred.length > 0 ? preferred : candidateNames(gender, block, false);
   if (pool.length === 0) {
-    throw new Error(`姓名池不足，無法在避開近14日姓名與當日名字的前提下取名（${gender}）`);
+    throw new Error(`姓名池不足，無法在避開近14日全名與近14日主角名字的前提下取名（${gender}）`);
   }
   const index = Math.min(pool.length - 1, Math.floor(rng() * pool.length));
   const name = pool[index] ?? pool[0];
   remember(block, name, true);
   return name;
+}
+
+// 正文／開局／標題／一句話簡介共用。單字「係」故意不收，避免「關係」誤殺。
+// 「姐」亦不收：它是繁體常用字（姐姐、小姐、師姐），不是單向簡體。
+export const SIMPLIFIED_ONLY = [
+  "长", "这", "说", "时", "后", "门", "开", "还", "没", "远", "两", "汉", "华", "国", "学",
+  "问", "间", "东", "车", "风", "么", "为", "来", "对", "实", "过", "经", "样", "关", "号",
+  "当", "从", "应", "头", "进", "无", "气", "总", "让", "觉", "现", "视", "听", "写", "买",
+  "卖", "阴", "阳", "龙", "飞", "汇", "价", "张", "历", "传", "确", "轻", "离", "难", "权",
+  "环", "归", "续", "缘", "认", "识", "语", "话", "记", "许", "谁", "个", "见", "长",
+  "马", "给", "着", "账", "馆", "饭", "饼", "辆", "岁", "妈",
+] as const;
+
+export const CANTONESE_SAFE = [
+  "嘅", "唔", "佢", "咗", "冇", "呢個", "邊度", "依家", "㩒", "鍾意", "攞",
+  "啲", "喺", "畀", "俾", "咩", "點解", "咁", "仲", "佢哋", "我哋", "你哋", "嚟", "搵", "揾", "諗", "睇",
+  "聽日", "琴日", "尋日", "而家", "嗰", "邊個", "點樣", "幾時", "係咪", "有冇", "㗎", "喎", "啫", "咋",
+] as const;
+
+export const MAINLAND_ADMIN_WORDS = [
+  "用人單位", "勞動合同", "租賃合同", "街道司法所", "小區", "立即清退", "打印", "軟件",
+] as const;
+
+export const LANE_DEATH_WORDS = ["過世", "去世", "離世", "遺物", "靈堂", "喪禮"] as const;
+
+export const DEATH_PLOT_LANES = ["cozy_shop", "kanbujian"] as const;
+
+export const FIRST_PERSON_LANES = ["dark_humor"] as const;
+
+export const FIRST_PERSON_PREMISE_RULE =
+  "第一個主角名字即為第一人稱「我」的本名，內文「我」不得另取新名。";
+
+const WHO_TITLE_RE = /誰准[你妳您]/;
+
+export type LanguageLeak = { failType: "SIMPLIFIED" | "CANTONESE"; note: string };
+
+function longestListed(text: string, words: readonly string[]): string | undefined {
+  return [...words].sort((a, b) => b.length - a.length).find((word) => word && text.includes(word));
+}
+
+export function findSimplified(text: string): string | undefined {
+  return SIMPLIFIED_ONLY.find((ch) => text.includes(ch));
+}
+
+export function findCantonese(text: string): string | undefined {
+  return longestListed(text, CANTONESE_SAFE);
+}
+
+export function findMainlandAdmin(text: string): string | undefined {
+  return longestListed(text, MAINLAND_ADMIN_WORDS);
+}
+
+export function findLanguageLeak(text: string): LanguageLeak | null {
+  const simplified = findSimplified(text);
+  if (simplified) return { failType: "SIMPLIFIED", note: `簡體字:${simplified}` };
+  const cantonese = findCantonese(text);
+  if (cantonese) return { failType: "CANTONESE", note: `粵語詞:${cantonese}` };
+  const admin = findMainlandAdmin(text);
+  if (admin) return { failType: "CANTONESE", note: `大陸詞:${admin}` };
+  return null;
+}
+
+export function findLaneDeathPlot(text: string): string | undefined {
+  return longestListed(text, LANE_DEATH_WORDS);
+}
+
+export function isDeathPlotBannedLane(laneKey: string | null | undefined): boolean {
+  return !!laneKey && (DEATH_PLOT_LANES as readonly string[]).includes(laneKey);
+}
+
+export function isFirstPersonLane(laneKey: string | null | undefined): boolean {
+  return !!laneKey && (FIRST_PERSON_LANES as readonly string[]).includes(laneKey);
+}
+
+export function lanePremiseExtraRules(laneKey: string): string {
+  const lines: string[] = [];
+  if (isFirstPersonLane(laneKey)) {
+    lines.push(`- 本線必須用第一人稱「我」。${FIRST_PERSON_PREMISE_RULE}不可改成第三人稱敘述。`);
+  }
+  if (isDeathPlotBannedLane(laneKey)) {
+    lines.push(
+      `- 本線嚴禁死亡情節：不可出現${LANE_DEATH_WORDS.join("、")}，不可把長輩、師傅或店主寫成已經去世。`
+    );
+  }
+  return lines.join("\n");
+}
+
+function looksLikeDifferentName(stated: string, protagonist: string): boolean {
+  const given = protagonist.slice(1);
+  if (!stated || stated === given || stated === protagonist || protagonist.endsWith(stated) || stated.endsWith(given)) {
+    return false;
+  }
+  const poolGivens = new Set<string>([...FEMALE_GIVEN, ...MALE_GIVEN]);
+  if (poolGivens.has(stated)) return true;
+  const surname = stated[0] ?? "";
+  if (surname && (SURNAMES as readonly string[]).includes(surname)) {
+    const rest = stated.slice(1);
+    if (poolGivens.has(rest) || (rest.length >= 1 && rest.length <= 2)) return true;
+  }
+  return false;
+}
+
+export function firstPersonIssues(content: string, protagonist?: string | null): string[] {
+  const issues: string[] = [];
+  const narration = content.replace(/「[^」]*」/g, "").replace(/『[^』]*』/g, "");
+  if (!narration.includes("我")) issues.push("第一人稱:內文沒有使用「我」敘述");
+  const first = protagonistNames(protagonist)[0];
+  if (!first) return issues;
+  const patterns = [
+    /我叫([\u4e00-\u9fff]{2,4})/g,
+    /我名叫([\u4e00-\u9fff]{2,4})/g,
+    /我的名字(?:是|叫)([\u4e00-\u9fff]{2,4})/g,
+  ];
+  for (const re of patterns) {
+    for (const match of content.matchAll(re)) {
+      const stated = match[1] ?? "";
+      if (!looksLikeDifferentName(stated, first)) continue;
+      issues.push(`第一人稱:「我」另取了名字「${stated}」，應為${first}`);
+      return issues;
+    }
+  }
+  return issues;
+}
+
+export function laneContentFails(content: string, laneKey?: string | null, protagonist?: string | null): string[] {
+  const fails: string[] = [];
+  if (isDeathPlotBannedLane(laneKey)) {
+    const death = findLaneDeathPlot(content);
+    if (death) fails.push(`禁題:${death}`);
+  }
+  if (isFirstPersonLane(laneKey)) fails.push(...firstPersonIssues(content, protagonist));
+  return fails;
+}
+
+export type RecentStoryMeta = {
+  lane?: string | null;
+  angle?: string | null;
+  premise?: string | null;
+};
+
+export function recentAngleSet(
+  metas: readonly RecentStoryMeta[],
+  laneKey?: string | null,
+  globalWindow = 24,
+  laneWindow = 6
+): Set<string> {
+  const angles = new Set<string>();
+  for (const meta of metas.slice(0, globalWindow)) {
+    if (meta?.angle) angles.add(meta.angle);
+  }
+  if (!laneKey) return angles;
+  let seen = 0;
+  for (const meta of metas) {
+    if (meta?.lane !== laneKey) continue;
+    if (meta.angle) angles.add(meta.angle);
+    seen += 1;
+    if (seen >= laneWindow) break;
+  }
+  return angles;
+}
+
+export function recentPremiseList(
+  metas: readonly RecentStoryMeta[],
+  laneKey?: string | null,
+  globalWindow = 24,
+  laneWindow = 6
+): string[] {
+  const ordered: string[] = [];
+  const push = (premise: string | null | undefined) => {
+    const text = premise?.trim();
+    if (!text || ordered.includes(text)) return;
+    ordered.push(text);
+  };
+  for (const meta of metas.slice(0, globalWindow)) push(meta?.premise);
+  if (!laneKey) return ordered;
+  let seen = 0;
+  for (const meta of metas) {
+    if (meta?.lane !== laneKey) continue;
+    seen += 1;
+    push(meta?.premise);
+    if (seen >= laneWindow) break;
+  }
+  return ordered;
+}
+
+export function openingSections(content: string, count = 2): string {
+  const parts = content.replace(/\r\n/g, "\n").trim().split(/\n[ \t]*＊＊＊[ \t]*\n/);
+  return parts.slice(0, Math.max(1, count)).join("\n＊＊＊\n");
+}
+
+export function repeatedTitleOpening(title: string, recentTitles: readonly string[]): string | null {
+  if (WHO_TITLE_RE.test(title) && recentTitles.some((item) => WHO_TITLE_RE.test(item))) return "誰准你／妳";
+  return null;
+}
+
+export function isReaderClear(score: { open: number; logic: number } | null | undefined): boolean {
+  if (!score) return true;
+  return score.open >= 6 && score.logic >= 6;
 }

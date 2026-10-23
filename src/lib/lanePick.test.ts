@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { closureFailNote, nextSeriesOrder, pickLaneByWeight, resolveForcedLane } from "./lanePick";
-import { KANBUJIAN_CLOSURE_CHECK, LANES, LANE_FORMS, THIRD_PERSON_LANES } from "../app/api/cron/generate-stories/route";
+import { buildLanePremiseSystem, buildShuangwenPremiseSystem, buildTitleSystem, KANBUJIAN_CLOSURE_CHECK, LANES, LANE_FORMS, THIRD_PERSON_LANES } from "../app/api/cron/generate-stories/route";
 
 const FIXTURE = [
   { key: "alpha", weight: 3, types: ["short", "serial"] },
@@ -84,10 +84,23 @@ describe("kanbujian lane", () => {
     assert.deepEqual(lane?.genres, ["溫情反轉"]);
     assert.ok(lane && lane.angles.length >= 3);
     assert.deepEqual(lane?.seeds, [
-      "《他不識字》：阿昌不識字，年邁仍在世；女兒在衣櫃底找到一盒用畫寫成的信。",
-      "《慢半拍》：父親入院那晚只有他不慌，記得帶父親最愛的杯子。",
-      "《收銀機旁的撲滿》：撲滿裡全是老闆娘替街坊墊付的錢。",
+      "社區廚房打烊前，義工把最後一鍋湯盛進保溫袋。新人以為他要帶回家，直到看見袋子被掛在晚班清潔工一定會經過的門把上。",
+      "琴行老師每天把學生落下的樂譜收進抽屜。學生以為被沒收，下一堂打開，每一處折角都被熨平，鉛筆註記還在。",
     ]);
+    for (const angle of [
+      "他不識字，年邁的父親仍在世，女兒在衣櫃底找到一盒用畫寫成的信",
+      "醫院裡人人說他慢半拍，他卻記得帶上父親最愛的杯子",
+      "雜貨店收銀機旁的撲滿，裡面是老闆替街坊墊付的錢",
+      "外婆搬離舊居前交出寫滿「欠款」的記帳本，孫女去討才發現全是外婆怕鄰居難堪而寫成借據的救急錢",
+      "父親退休前每天說順路載女兒去車站，她考了駕照看導航才發現那條路繞了半個城市",
+      "租屋處老電扇吹了五年沒壞，搬家那天房東太太才說漏嘴，樓下木訥的房東兒子每半年趁她上班時換一次零件",
+    ]) {
+      assert.equal(lane?.angles.includes(angle), true, angle);
+    }
+    const seedText = lane?.seeds.join("\n") ?? "";
+    for (const blocked of ["衣櫃", "撲滿", "記帳本", "導航", "電扇", "不識字"]) {
+      assert.equal(seedText.includes(blocked), false, blocked);
+    }
   });
 
   it("states the prop callback in written Chinese and bans the listed topics", () => {
@@ -96,9 +109,12 @@ describe("kanbujian lane", () => {
     for (const word of ["反差", "日常細節", "長輩", "實物", "callback", "金句", "不說教", "不直述感情", "收口"]) {
       assert.equal(prose.includes(word), true, word);
     }
-    for (const ban of ["失蹤", "車禍", "警察", "猝死", "產權", "商戰", "開放結局"]) {
+    for (const ban of ["失蹤", "車禍", "警察", "猝死", "產權", "商戰", "開放結局", "過世", "去世", "離世", "遺物"]) {
       assert.equal(lane?.style.includes(ban), true, ban);
     }
+    const cozy = LANES.find((item) => item.key === "cozy_shop");
+    assert.match(cozy?.style ?? "", /過世/);
+    assert.match(cozy?.style ?? "", /遺物/);
     for (const spoken of ["嘅", "唔", "佢", "咗", "冇"]) {
       assert.equal(lane?.style.includes(spoken), false, spoken);
       assert.equal(lane?.premiseGuide.includes(spoken), false, spoken);
@@ -137,5 +153,33 @@ describe("kanbujian lane", () => {
       assert.notEqual(picked.key, "kanbujian");
       assert.ok(picked.types.includes("serial"));
     }
+  });
+});
+
+describe("generation prompts", () => {
+  it("locks written Chinese, abstract titles, and first-person premise rules", () => {
+    const premise = buildShuangwenPremiseSystem({ name: "倒數死線", driver: "時間壓迫", seed: "示範開局" }, "一筆還不出的錢");
+    assert.match(premise, /主角必須是普通人，籌碼必須是普通人有共鳴的東西/);
+    assert.equal(premise.includes("主角要係普通人"), false);
+    assert.match(premise, /用人單位/);
+    assert.match(premise, /絕對禁止任何粵語/);
+
+    const humor = LANES.find((item) => item.key === "dark_humor");
+    const kanbujian = LANES.find((item) => item.key === "kanbujian");
+    assert.ok(humor && kanbujian);
+    const humorPrompt = buildLanePremiseSystem(humor, humor.angles[0]);
+    assert.match(humorPrompt, /第一個主角名字即為第一人稱「我」的本名，內文「我」不得另取新名/);
+    const kanPrompt = buildLanePremiseSystem(kanbujian, "被人當成冷淡的長輩，每天重複一個沒有人明白的小動作");
+    assert.match(kanPrompt, /嚴禁抄襲它的情節、職業、場景/);
+    assert.match(kanPrompt, /過世/);
+    assert.equal(kanPrompt.includes("撲滿"), false);
+    assert.equal(kanPrompt.includes("衣櫃"), false);
+
+    const title = buildTitleSystem();
+    assert.match(title, /標題只可取材自第 1–2 節已出現的設定與動作/);
+    assert.match(title, /誰准你／妳/);
+    assert.equal(title.includes("被我開除的實習生，是新來的總監"), false);
+    assert.equal(title.includes("誰准你替我認罪"), false);
+    assert.equal(title.includes("實習生"), false);
   });
 });

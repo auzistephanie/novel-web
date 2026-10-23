@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-23**：**故事生成質素閘第二輪（書面語／未達標稿／撞名撞切入點／標題／看不見的好）** 起因：當週質素回顧。只改生成規則、質素閘、文件，同一份分鏡嘅一個粵語錯字。**唔會**刪除、下架或改寫已發佈故事。
+  **修**：① `LANG_RULE` 加大陸行政詞禁令；爽文開局同 teaser 掛上語言鎖；premise／teaser／標題 fallback 擋簡體、粵語同大陸詞。`姐` 唔入簡體表（姐姐／小姐／師姐係繁體；鉤子 seed 同 2026-07-17 分鏡都用緊）。單字「係」唔入粵語表，避免「關係」誤殺。② `pass: false` 嘅「沒有完整收尾／道具未回收／分節數不對／字數不足／粵語詞／AI陳套詞」改為硬擋，唔可以跳過 `repairDraft`；讀者 `logic` 要 ≥ 6 先算過關。③ 近 14 日主角名字（例如承宴、承澤、清嘉）都擋，唔再只限當日；切入點同開局睇最近 24 篇，再加同一條線最近 6 篇。④ 標題唔再畀「實習生」「誰准你替我認罪」呢類例子；只可以用第 1–2 節已經寫出嘅事，近期用過「誰准你／妳」就唔准再撞。⑤ `kanbujian` 三個核心原型改做切入點，另加記帳本、順路、老電扇三條；seed 改成唔重疊嘅張力例子。`cozy_shop` 同 `kanbujian` 擋過世／去世／離世／遺物／靈堂／喪禮。`dark_humor` 寫明第一個主角名就係「我」，正文要真正用「我」敘述。pipeline 兩份 CLAUDE 寫明旁白、對白、字幕必須書面語；分鏡「冇再喊錯」改「沒再喊錯」。
+  **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。
+
 - **2026-10-22**：**「看不見的好」改入每日 short 輪換（權重 0 → 2）** 起因：Stephanie 要呢條線日常都會被抽中，唔再只靠人手 `?lane=`。
   **修**（`route.ts`、`lanePick.test.ts`）：其他可出 short 的線權重係 2 或 3（8 條：六個 2、兩個 3），中位數同最常見都係 2，所以 `kanbujian` 用 2。short 池總權重 20，大約每 10 日抽中 1 次。`?lane=kanbujian` 維持有效；serial 仍然冇呢條。權重 0 的抽選排除留喺 `lanePick.ts`，呢條線唔再使用。
   **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。

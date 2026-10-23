@@ -46,6 +46,10 @@ brew install ffmpeg               # assemble.py 需要;要 Noto Sans CJK/PingFan
 - bot listener（收 ✅ callback → 觸發生圖 pipeline）+ 每日 scheduled task。呢兩樣同要一個長駐後台服務，一齊做最抵。
 - Supabase `novel_video_jobs` 表（job 狀態）+ storage bucket（存片）+ `service_heartbeat`（task_name=`novel-video-clip`，掛 `check_novel_story_heartbeat.py` 多 job 監察）。
 
+## 語言
+
+所有腳本旁白（narration）、對白（dialogue）、字幕必須全書面語，嚴禁粵語口語。
+
 ## 推送
 
 跟 repo 根 `scripts/github_push.py`，冇獨立 push 機制。`output/` 同 `.env` 已 gitignore。
