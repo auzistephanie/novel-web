@@ -274,34 +274,29 @@ describe("title length and hook shape", () => {
     }
   });
 
-  it("requires a ten-to-fourteen-character one-comma title on the warm lanes", () => {
-    const ok = "不識字的爸，衣櫃鎖著三十封信";
-    assert.equal(titleGlyphCount(ok), 13);
+  it("requires a twelve-to-twenty-two-character contrast title on the warm lanes", () => {
+    const ok = "我嫌他連買菜都慢半拍，直到我爸進急診室那晚";
+    assert.equal(titleGlyphCount(ok), 20);
     assert.deepEqual(titleFormatFails(ok, "kanbujian"), []);
     assert.deepEqual(titleFormatFails(ok, "warm_twist"), []);
     assert.deepEqual(titleFormatFails(ok, "cozy_shop"), []);
 
+    const fifteen = "嫌他連買菜太慢，直到爸進了急診室";
+    assert.equal(titleGlyphCount(fifteen), 15);
+    assert.deepEqual(titleFormatFails(fifteen, "kanbujian"), []);
+    assert.deepEqual(titleFormatFails(fifteen, "warm_twist"), []);
+
     const noContrast = "雜貨店老闆娘今天又把帳本鎖上了";
     assert.equal(titleGlyphCount(noContrast), 15);
     assert.match(titleFormatFails(noContrast, "kanbujian").join("\n"), /標題句式/);
-    assert.match(titleFormatFails(noContrast, "kanbujian").join("\n"), /標題長度/);
+    assert.equal(titleFormatFails(noContrast, "kanbujian").some((note) => note.startsWith("標題長度")), false);
     assert.deepEqual(titleFormatFails(noContrast, "shuangwen"), []);
-
-    const fifteen = "嫌他連買菜太慢，直到爸進了急診室";
-    assert.equal(titleGlyphCount(fifteen), 15);
-    assert.match(titleFormatFails(fifteen, "cozy_shop").join("\n"), /標題長度/);
-    assert.equal(titleFormatFails(fifteen, "cozy_shop").some((note) => note.startsWith("標題句式")), false);
 
     const tooLong = "外婆臨搬家塞給我一本催債帳本，上面的人見了我卻全在哭";
     assert.equal(titleGlyphCount(tooLong), 25);
     assert.match(titleFormatFails(tooLong, "kanbujian").join("\n"), /標題長度/);
     assert.equal(titleFormatFails(tooLong, "kanbujian").some((note) => note.startsWith("標題句式")), false);
     assert.deepEqual(titleFormatFails(tooLong, "shuangwen"), []);
-
-    const twoCommas = "不識字的爸，衣櫃鎖著，三十封信";
-    assert.equal(titleGlyphCount(twoCommas), 13);
-    assert.match(titleFormatFails(twoCommas, "warm_twist").join("\n"), /標題句式/);
-    assert.equal(titleFormatFails(twoCommas, "warm_twist").some((note) => note.startsWith("標題長度")), false);
 
     const mid = "窗邊那盞燈今夜又亮了一次";
     assert.equal(titleGlyphCount(mid), 12);

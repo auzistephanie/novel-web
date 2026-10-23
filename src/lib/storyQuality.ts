@@ -553,12 +553,11 @@ export function titleFormatFails(title: string, laneKey?: string | null): string
     fails.push(`平淡散文題:${count}字，不可只用2至6字的散文題或單純名詞`);
   }
   if (!isHookTitleLane(laneKey)) return fails;
-  if (count < 10 || count > 14) {
-    fails.push(`標題長度:${count}字，本線必須是10至14字，不可超過15字`);
+  if (count < 12 || count > 22) {
+    fails.push(`標題長度:${count}字，本線必須是12至22字`);
   }
-  const commas = title.match(/[，,]/g)?.length ?? 0;
-  if (commas !== 1 || /[。！？?!]/.test(title)) {
-    fails.push("標題句式:本線必須一逗到底，前半句是反差或嫌棄，後半句是反常動作或懸念");
+  if (!/[，,]|卻|直到|其實|才發現/.test(title)) {
+    fails.push("標題句式:本線必須是表面嫌棄或誤會，加上一個反常的具體舉動或物件懸念");
   }
   return fails;
 }
