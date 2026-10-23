@@ -17,12 +17,15 @@ import {
   isDeathPlotBannedLane,
   isFirstPersonLane,
   isHardBlocked,
+  isHookTitleLane,
   isReaderClear,
   laneContentFails,
   lanePremiseExtraRules,
   MAINLAND_ADMIN_WORDS,
   nameBlockFromStories,
   openingSections,
+  titleFormatFails,
+  titleGlyphCount,
   premiseBlockReason,
   QUALITY_REPAIR,
   qualityFailNotes,
@@ -430,6 +433,16 @@ const KANBUJIAN_STYLE = `
 - 短篇必須收口：開頭的問題有答案，最後一段同時完成道具 callback 與一句短金句。
 `;
 
+// 六條具體切入點，同時係鉤子示範。字數可以長過發表標題上限；generateTitle 會要求壓到 12–22 字。
+export const KANBUJIAN_HOOKS = [
+  "連菜單都看不懂的爸，衣櫃底卻鎖著三十封給我的信",
+  "我嫌他連買菜都慢半拍，直到我爸進急診室那晚",
+  "雜貨店老闆娘記了整條街的欠帳，卻從來不准人還錢",
+  "外婆臨搬家塞給我一本催債帳本，上面的人見了我卻全在哭",
+  "我爸每天順路載我上班，直到我自己開車才發現他騙了我八年",
+  "退租那天房東太太說漏嘴，那台吹不壞的舊電扇其實壞過十次",
+] as const;
+
 export const LANES: Lane[] = [
   {
     key: "shuangwen",
@@ -666,17 +679,9 @@ export const LANES: Lane[] = [
       "被笑幫倒忙的人，記得所有人忽略的細節",
       "攤主被嫌小氣，磅秤底下壓著一疊替街坊記的帳",
       "母親從不說加油，卻把孩子的工牌天天擦乾淨",
-      "他不識字，年邁的父親仍在世，女兒在衣櫃底找到一盒用畫寫成的信",
-      "醫院裡人人說他慢半拍，他卻記得帶上父親最愛的杯子",
-      "雜貨店收銀機旁的撲滿，裡面是老闆替街坊墊付的錢",
-      "外婆搬離舊居前交出寫滿「欠款」的記帳本，孫女去討才發現全是外婆怕鄰居難堪而寫成借據的救急錢",
-      "父親退休前每天說順路載女兒去車站，她考了駕照看導航才發現那條路繞了半個城市",
-      "租屋處老電扇吹了五年沒壞，搬家那天房東太太才說漏嘴，樓下木訥的房東兒子每半年趁她上班時換一次零件",
+      ...KANBUJIAN_HOOKS,
     ],
-    seeds: [
-      "社區廚房打烊前，義工把最後一鍋湯盛進保溫袋。新人以為他要帶回家，直到看見袋子被掛在晚班清潔工一定會經過的門把上。",
-      "琴行老師每天把學生落下的樂譜收進抽屜。學生以為被沒收，下一堂打開，每一處折角都被熨平，鉛筆註記還在。",
-    ],
+    seeds: [...KANBUJIAN_HOOKS],
   },
 ];
 
@@ -1000,21 +1005,24 @@ function titleShape(title: string): TitleShape {
   if (/[，,]/.test(title)) return "two_clause";
   return "single_phrase";
 }
-function shapeFails(title: string, recentTitles: string[]): string[] {
+function shapeFails(title: string, recentTitles: string[], laneKey?: string | null): string[] {
   const shape = titleShape(title);
   const recentShapes = recentTitles.filter(Boolean).map(titleShape);
   if (shape === "time_moment" && recentShapes.slice(0, 6).includes("time_moment")) {
     return [`句式重複：近期已用過${SHAPE_LABEL.time_moment}，今次不可以再用`];
   }
+  // 暖線標題必須用逗號或轉折，不能再因為「連續兩截句」被打回頭。
+  if (isHookTitleLane(laneKey) && shape === "two_clause") return [];
   if (recentShapes.length >= 2 && recentShapes[0] === shape && recentShapes[1] === shape) {
     return [`句式重複：最近兩篇都是${SHAPE_LABEL[shape]}，今次必須換另一種句式`];
   }
   return [];
 }
 
-function validateTitle(title: string, recentTitles: string[]): string[] {
+function validateTitle(title: string, recentTitles: string[], laneKey?: string | null): string[] {
   const fails: string[] = [];
-  fails.push(...shapeFails(title, recentTitles));
+  fails.push(...shapeFails(title, recentTitles, laneKey));
+  fails.push(...titleFormatFails(title, laneKey));
   if (!title) fails.push("標題為空");
   if (title.startsWith("我") && recentTitles.slice(0, 4).some((t) => t.startsWith("我"))) fails.push("近期已有「我」開頭的標題，今次不可以再用");
   if (TITLE_FORMULAIC.test(title)) fails.push("標題formulaic pattern");
@@ -1032,27 +1040,41 @@ function validateTitle(title: string, recentTitles: string[]): string[] {
   return fails;
 }
 
-export function buildTitleSystem(): string {
+export function buildTitleSystem(laneKey?: string | null): string {
+  const hookLane = isHookTitleLane(laneKey);
+  const lengthRule = hookLane
+    ? `3. 字數必須是 12–22 字（標點不算）。結構必須是「表面嫌棄或誤會」加上「一個反常的具體舉動或物件懸念」，讓人第一眼好奇「為什麼會這樣」。句中要有逗號，或用「卻」「直到」「其實」「才發現」轉折。不可直接寫出第 3–4 節才揭曉的真相。`
+    : `3. 字數控制在 8-16 字。`;
+  const kanbujianExamples =
+    laneKey === "kanbujian"
+      ? `\n【看不見的好：鉤子示範（只學力度。示範可以長過 22 字，發表標題必須壓到 12–22 字，保留嫌棄或誤會，加上反常舉動，不要寫完第 3–4 節的真相。其他故事不可照抄這些人物、物件和情節）】\n${KANBUJIAN_HOOKS.map((hook) => `- ${hook}`).join("\n")}\n`
+      : "";
   return (
     `${LANG_RULE}\n\n` +
     `你是 2026 年爆款短劇與網文的標題大師。請只根據故事第 1–2 節已經寫出的內容，想一個點擊率極高的標題。\n\n` +
     `【標題要點】\n` +
     `1. 要讓人一看就想知道「到底發生甚麼事」：用強烈衝突、反差或懸念，但「懸念」不等於「劇透」。\n` +
     `2. 標題提到的畫面或情節，必須是第 1–2 節正在發生、被寫出來的場面，不可以編造內文沒有的場面。\n` +
-    `3. 字數控制在 8-16 字。\n` +
+    `${lengthRule}\n` +
     `4. 不可以誇大：標題的嚴重程度要和故事實際一致（小事不要寫成「騙局」「陰謀」）。\n` +
     `5. 不要用行話或專有名詞（例如「感應器」「協議書第三條」），要用一般人一看就懂的詞。\n` +
     `6. 一次輸出 5 個不同句式的候選標題，每行一個，不要編號、不要解釋；你認為最想點的排第一。\n\n` +
     `【硬性規則】\n` +
-    `標題只可取材自第 1–2 節已出現的設定與動作，嚴禁劇透第 3 節或之後才揭曉的秘密或反轉，嚴禁捏造內文沒有的身份或事件；且不得與近期標題開頭句式重複（如「誰准你／妳」）。\n\n` +
+    `標題只可取材自第 1–2 節已出現的設定與動作，嚴禁劇透第 3 節或之後才揭曉的秘密或反轉，嚴禁捏造內文沒有的身份或事件；且不得與近期標題開頭句式重複（如「誰准你／妳」）。\n` +
+    (hookLane
+      ? `本線標題必須讓讀者先看見嫌棄或誤會，再看見一件說不過去的具體舉動或物件；真相留到後面，標題本身不可以講完。\n`
+      : "") +
+    `\n` +
     `【句式參考（只學句法，不要帶入任何具體身份、職業、罪名或情節；每次換一種）】\n` +
     `- 用第 1–2 節已經說出口的一句短對白做標題。不要自造對白。\n` +
     `- 用反問句製造壓力。疑問必須來自第 1–2 節已經發生的動作，不要用「誰准你」或「誰准妳」開頭。\n` +
     `- 用身份或處境的反差直述。只可使用正文已經寫明的身份，不可自造職位或頭銜。\n` +
     `- 用正文第 1–2 節已經出現的數字製造懸念。數字必須在這兩節裡出現過。\n` +
     `- 用一個已經發生的動作，接一個已經發生的後果。動作和後果都必須在第 1–2 節出現過。\n` +
-    `- 不要用「某時刻（那刻／那夜／那天／當晚／之後），某結果」這種時間點開頭的句式。\n\n` +
-    `【禁止】\n` +
+    `- 不要用「某時刻（那刻／那夜／那天／當晚／之後），某結果」這種時間點開頭的句式。\n` +
+    kanbujianExamples +
+    `\n【禁止】\n` +
+    `- 嚴禁只有 2–6 字的平淡散文題或單純名詞（例如「慢半拍」「他不識字」「外婆的記帳本」「舊電扇」）。\n` +
     `- 禁止「XX的YY」「XX之YY」這類老土句式。\n` +
     `- 必須用繁體字，不可以有簡體字或粵語口語詞（例如「嘅」「唔」「佢」「咗」「冇」）。\n` +
     `- 禁止出現會被誤讀成粗話的字組合（例如「她媽的」「他媽的」）。要提到母親一律寫「母親」或「媽媽留下的」，不要用「她媽的X」這種寫法。\n\n` +
@@ -1062,8 +1084,13 @@ export function buildTitleSystem(): string {
 
 // 獨立標題生成：畀返實際已經寫低嘅內文AI，逼佢一定要根據真實內容諗標題，
 // 唔會再出現「標題講咗個內文冇嘅戲劇化場面」嘅走數情況。
-async function generateTitle(content: string, recentTitles: string[], deadline = Infinity): Promise<string> {
-  const systemMsg = buildTitleSystem();
+async function generateTitle(
+  content: string,
+  recentTitles: string[],
+  deadline = Infinity,
+  laneKey?: string | null
+): Promise<string> {
+  const systemMsg = buildTitleSystem(laneKey);
   const opening = openingSections(content, 2);
   const recentPrefixes = recentTitles
     .map((title) => title.trim().slice(0, 4))
@@ -1086,12 +1113,15 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
     const cands = raw
       .split("\n")
       .map((l) => l.replace(/^\s*(\d+[.、)）]\s*)?/, "").trim().replace(/^["「『]+|["」』]+$/g, ""))
-      .filter((l) => l.length >= 4 && l.length <= 30)
+      .filter((l) => {
+        const count = titleGlyphCount(l);
+        return count >= 2 && count <= 40;
+      })
       .slice(0, 6);
     if (!lastTitle && cands[0]) lastTitle = cands[0];
     let firstFails: string[] = [];
     for (const c of cands) {
-      const fails = validateTitle(c, recentTitles);
+      const fails = validateTitle(c, recentTitles, laneKey);
       if (fails.length === 0) return c;
       if (c === cands[0]) firstFails = fails;
     }
@@ -1099,7 +1129,8 @@ async function generateTitle(content: string, recentTitles: string[], deadline =
   }
   const leak = lastTitle ? findLanguageLeak(lastTitle) : null;
   const repeatedOpening = lastTitle ? repeatedTitleOpening(lastTitle, recentTitles) : null;
-  if (leak || repeatedOpening || findBannedTopic(lastTitle) || findBusinessWar(lastTitle)) {
+  const formatFails = titleFormatFails(lastTitle, laneKey);
+  if (leak || repeatedOpening || findBannedTopic(lastTitle) || findBusinessWar(lastTitle) || formatFails.length > 0) {
     throw new Error(`標題仍不合格，不發佈：${lastTitle}`);
   }
   return lastTitle;
@@ -1260,7 +1291,9 @@ export function buildLanePremiseSystem(lane: Lane, angle: string): string {
       : "") +
     (extra ? `${extra}\n` : "") +
     `${SHARED_BANS}\n` +
-    `【張力標尺（示範這個吸引力水平，但嚴禁抄襲它的情節、職業、場景或對白）】\n${lane.seeds.join("\n")}`
+    (lane.key === "kanbujian"
+      ? `【鉤子示範（示範表面嫌棄或誤會，加上反常具體舉動的吸引力。切入點必須照寫。若某一則示範同今次指定切入點是同一件事，就寫那一件，不得把該示範當成禁題。其餘示範的情節、職業、場景或對白不可照抄）】\n${lane.seeds.join("\n")}`
+      : `【張力標尺（示範這個吸引力水平，但嚴禁抄襲它的情節、職業、場景或對白）】\n${lane.seeds.join("\n")}`)
   );
 }
 
@@ -1723,7 +1756,7 @@ async function generateOne(
     picked: d === best,
   }));
 
-  const title = await generateTitle(best.content, recentTitles, t0 + 275_000);
+  const title = await generateTitle(best.content, recentTitles, t0 + 275_000, lane.key);
   if (Date.now() < t0 + 270_000) {
     const teaser = await generateTeaser(best.content, title);
     if (teaser) genMeta.teaser = teaser;

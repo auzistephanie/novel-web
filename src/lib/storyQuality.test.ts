@@ -30,6 +30,8 @@ import {
   nameBlockFromStories,
   openingSections,
   premiseBlockReason,
+  titleFormatFails,
+  titleGlyphCount,
   qualityFailNotes,
   recentAngleSet,
   recentPremiseList,
@@ -257,5 +259,42 @@ describe("cross-week angles, titles, and first-person lanes", () => {
     assert.equal(isReaderClear({ open: 6, logic: 6 }), true);
     assert.equal(isReaderClear({ open: 5, logic: 8 }), false);
     assert.equal(isReaderClear(null), true);
+  });
+});
+
+describe("title length and hook shape", () => {
+  it("rejects two-to-six-character flat titles on every lane", () => {
+    for (const title of ["慢半拍", "他不識字", "外婆的記帳本", "舊電扇"]) {
+      const count = titleGlyphCount(title);
+      assert.ok(count >= 2 && count <= 6, `${title}:${count}`);
+      assert.match(titleFormatFails(title, "shuangwen").join("\n"), /平淡散文題/);
+      assert.match(titleFormatFails(title, "kanbujian").join("\n"), /平淡散文題/);
+      assert.match(titleFormatFails(title, "warm_twist").join("\n"), /標題長度/);
+      assert.match(titleFormatFails(title, "cozy_shop").join("\n"), /標題長度/);
+    }
+  });
+
+  it("requires a twelve-to-twenty-two-character contrast title on the warm lanes", () => {
+    const ok = "我嫌他連買菜都慢半拍，直到我爸進急診室那晚";
+    assert.equal(titleGlyphCount(ok), 20);
+    assert.deepEqual(titleFormatFails(ok, "kanbujian"), []);
+    assert.deepEqual(titleFormatFails(ok, "warm_twist"), []);
+    assert.deepEqual(titleFormatFails(ok, "cozy_shop"), []);
+
+    const noContrast = "雜貨店老闆娘今天又把帳本鎖上了";
+    assert.equal(titleGlyphCount(noContrast), 15);
+    assert.match(titleFormatFails(noContrast, "kanbujian").join("\n"), /標題句式/);
+    assert.deepEqual(titleFormatFails(noContrast, "shuangwen"), []);
+
+    const tooLong = "外婆臨搬家塞給我一本催債帳本，上面的人見了我卻全在哭";
+    assert.equal(titleGlyphCount(tooLong), 25);
+    assert.match(titleFormatFails(tooLong, "kanbujian").join("\n"), /標題長度/);
+    assert.equal(titleFormatFails(tooLong, "kanbujian").some((note) => note.startsWith("標題句式")), false);
+    assert.deepEqual(titleFormatFails(tooLong, "shuangwen"), []);
+
+    const mid = "窗邊那盞燈今夜又亮了一次";
+    assert.equal(titleGlyphCount(mid), 12);
+    assert.deepEqual(titleFormatFails(mid, "shuangwen"), []);
+    assert.match(titleFormatFails(mid, "cozy_shop").join("\n"), /標題句式/);
   });
 });

@@ -533,3 +533,31 @@ export function isReaderClear(score: { open: number; logic: number } | null | un
   if (!score) return true;
   return score.open >= 6 && score.logic >= 6;
 }
+
+export const HOOK_TITLE_LANES = ["kanbujian", "warm_twist", "cozy_shop"] as const;
+
+const TITLE_PUNCT_RE = /[《》「」『』“”"'「」\s，,。！？?!、：:；;（）()．.·—\-]/g;
+
+export function isHookTitleLane(laneKey?: string | null): boolean {
+  return !!laneKey && (HOOK_TITLE_LANES as readonly string[]).includes(laneKey);
+}
+
+export function titleGlyphCount(title: string): number {
+  return [...title.replace(TITLE_PUNCT_RE, "")].length;
+}
+
+export function titleFormatFails(title: string, laneKey?: string | null): string[] {
+  const count = titleGlyphCount(title);
+  const fails: string[] = [];
+  if (count >= 2 && count <= 6) {
+    fails.push(`平淡散文題:${count}字，不可只用2至6字的散文題或單純名詞`);
+  }
+  if (!isHookTitleLane(laneKey)) return fails;
+  if (count < 12 || count > 22) {
+    fails.push(`標題長度:${count}字，本線必須是12至22字`);
+  }
+  if (!/[，,]|卻|直到|其實|才發現/.test(title)) {
+    fails.push("標題句式:本線必須是表面嫌棄或誤會，加上一個反常的具體舉動或物件懸念");
+  }
+  return fails;
+}

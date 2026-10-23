@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { closureFailNote, nextSeriesOrder, pickLaneByWeight, resolveForcedLane } from "./lanePick";
-import { buildLanePremiseSystem, buildShuangwenPremiseSystem, buildTitleSystem, KANBUJIAN_CLOSURE_CHECK, LANES, LANE_FORMS, THIRD_PERSON_LANES } from "../app/api/cron/generate-stories/route";
+import { buildLanePremiseSystem, buildShuangwenPremiseSystem, buildTitleSystem, KANBUJIAN_CLOSURE_CHECK, KANBUJIAN_HOOKS, LANES, LANE_FORMS, THIRD_PERSON_LANES } from "../app/api/cron/generate-stories/route";
+import { findLanguageLeak, titleFormatFails, titleGlyphCount } from "./storyQuality";
 
 const FIXTURE = [
   { key: "alpha", weight: 3, types: ["short", "serial"] },
@@ -83,11 +84,13 @@ describe("kanbujian lane", () => {
     assert.deepEqual(lane?.types, ["short"]);
     assert.deepEqual(lane?.genres, ["溫情反轉"]);
     assert.ok(lane && lane.angles.length >= 3);
-    assert.deepEqual(lane?.seeds, [
-      "社區廚房打烊前，義工把最後一鍋湯盛進保溫袋。新人以為他要帶回家，直到看見袋子被掛在晚班清潔工一定會經過的門把上。",
-      "琴行老師每天把學生落下的樂譜收進抽屜。學生以為被沒收，下一堂打開，每一處折角都被熨平，鉛筆註記還在。",
-    ]);
-    for (const angle of [
+    assert.deepEqual(lane?.seeds, [...KANBUJIAN_HOOKS]);
+    for (const hook of KANBUJIAN_HOOKS) {
+      assert.equal(lane?.angles.includes(hook), true, hook);
+      assert.equal(findLanguageLeak(hook), null, hook);
+    }
+    assert.equal(lane?.angles.includes("被人當成冷淡的長輩，每天重複一個沒有人明白的小動作"), true);
+    for (const gone of [
       "他不識字，年邁的父親仍在世，女兒在衣櫃底找到一盒用畫寫成的信",
       "醫院裡人人說他慢半拍，他卻記得帶上父親最愛的杯子",
       "雜貨店收銀機旁的撲滿，裡面是老闆替街坊墊付的錢",
@@ -95,12 +98,12 @@ describe("kanbujian lane", () => {
       "父親退休前每天說順路載女兒去車站，她考了駕照看導航才發現那條路繞了半個城市",
       "租屋處老電扇吹了五年沒壞，搬家那天房東太太才說漏嘴，樓下木訥的房東兒子每半年趁她上班時換一次零件",
     ]) {
-      assert.equal(lane?.angles.includes(angle), true, angle);
+      assert.equal(lane?.angles.includes(gone), false, gone);
     }
-    const seedText = lane?.seeds.join("\n") ?? "";
-    for (const blocked of ["衣櫃", "撲滿", "記帳本", "導航", "電扇", "不識字"]) {
-      assert.equal(seedText.includes(blocked), false, blocked);
-    }
+    const angleText = lane?.angles.join("\n") ?? "";
+    assert.equal(angleText.includes("他不識字"), false);
+    assert.equal(angleText.includes("收銀機旁的撲滿"), false);
+    assert.equal(angleText.includes("記帳本"), false);
   });
 
   it("states the prop callback in written Chinese and bans the listed topics", () => {
@@ -169,17 +172,44 @@ describe("generation prompts", () => {
     assert.ok(humor && kanbujian);
     const humorPrompt = buildLanePremiseSystem(humor, humor.angles[0]);
     assert.match(humorPrompt, /第一個主角名字即為第一人稱「我」的本名，內文「我」不得另取新名/);
-    const kanPrompt = buildLanePremiseSystem(kanbujian, "被人當成冷淡的長輩，每天重複一個沒有人明白的小動作");
-    assert.match(kanPrompt, /嚴禁抄襲它的情節、職業、場景/);
+    assert.match(humorPrompt, /嚴禁抄襲它的情節、職業、場景/);
+    const assigned = KANBUJIAN_HOOKS[0];
+    const kanPrompt = buildLanePremiseSystem(kanbujian, assigned);
+    assert.match(kanPrompt, /今次指定的切入點（必須用）/);
+    assert.match(kanPrompt, /連菜單都看不懂的爸，衣櫃底卻鎖著三十封給我的信/);
+    assert.match(kanPrompt, /不得把該示範當成禁題/);
+    assert.match(kanPrompt, /其餘示範的情節、職業、場景或對白不可照抄/);
+    assert.equal(kanPrompt.includes("嚴禁抄襲它的情節、職業、場景"), false);
     assert.match(kanPrompt, /過世/);
     assert.equal(kanPrompt.includes("撲滿"), false);
-    assert.equal(kanPrompt.includes("衣櫃"), false);
+    assert.equal(kanPrompt.includes("他不識字"), false);
+    const genericPrompt = buildLanePremiseSystem(kanbujian, "被人當成冷淡的長輩，每天重複一個沒有人明白的小動作");
+    assert.match(genericPrompt, /切入點必須照寫/);
+    assert.match(genericPrompt, /不得把該示範當成禁題/);
+    assert.match(genericPrompt, /衣櫃底卻鎖著三十封給我的信/);
 
     const title = buildTitleSystem();
     assert.match(title, /標題只可取材自第 1–2 節已出現的設定與動作/);
     assert.match(title, /誰准你／妳/);
+    assert.match(title, /慢半拍/);
+    assert.match(title, /2–6 字/);
+    assert.equal(title.includes("衣櫃"), false);
     assert.equal(title.includes("被我開除的實習生，是新來的總監"), false);
     assert.equal(title.includes("誰准你替我認罪"), false);
     assert.equal(title.includes("實習生"), false);
+
+    const kanTitle = buildTitleSystem("kanbujian");
+    assert.match(kanTitle, /12–22 字/);
+    assert.match(kanTitle, /表面嫌棄或誤會/);
+    assert.match(kanTitle, /衣櫃底卻鎖著三十封給我的信/);
+    assert.equal(titleGlyphCount(KANBUJIAN_HOOKS[0]), 22);
+    assert.deepEqual(titleFormatFails(KANBUJIAN_HOOKS[0], "kanbujian"), []);
+    assert.match(titleFormatFails(KANBUJIAN_HOOKS[3], "kanbujian").join("\n"), /標題長度/);
+
+    const warmTitle = buildTitleSystem("warm_twist");
+    assert.match(warmTitle, /12–22 字/);
+    assert.match(warmTitle, /表面嫌棄或誤會/);
+    assert.equal(warmTitle.includes("衣櫃"), false);
+    assert.equal(warmTitle.includes("舊電扇"), true);
   });
 });
