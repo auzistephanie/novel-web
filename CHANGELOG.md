@@ -1,5 +1,9 @@
 # 改版歷史
 
+- **2026-10-30**：**提交 package-lock.json（Node 24 類型）** 起因：`.gitignore` 已唔再忽略 lockfile，`@types/node` 已改 `^24`，但 lockfile 未入庫。
+  **修**：`npm install`（npm 10.9.9）生成 `package-lock.json`（lockfileVersion 3）。`@types/node` 鎖定 `24.19.2`。`package.json` 依賴名單冇變。
+  **核實**：`npm run build` 過；`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`（27 項過）。未 merge。
+
 - **2026-10-23**：**暖線標題跟返 12–22 字全景鉤子** 起因：Stephanie 話上次好啲，10–14 字、一逗到底唔用。
   **修**（`route.ts`、`storyQuality.ts`）：`kanbujian`／`warm_twist`／`cozy_shop` 發表標題改回 12–22 字（標點不算），不再卡 14 或 15 字。2–6 字散文題或單純名詞仍然不發佈。句式係表面嫌棄或誤會，加上反常具體舉動或物件懸念，唔寫完第 3–4 節真相。`kanbujian` 六條切入點同 seed 改回六句長示範；後三句長過 22 字，只做力度示範，發表時要壓到 12–22 字。指定切入點仍然必須照寫，同題示範唔當禁題。
   **核實**：`tsc --noEmit`、`npx tsx --test src/lib/storyQuality.test.ts src/lib/lanePick.test.ts`、`npm run build`。未跑 production cron，未 merge。

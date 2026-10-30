@@ -9,7 +9,6 @@ build
 next-env.d.ts
 .DS_Store
 .vercel
-package-lock.json
 
 # Python（pipeline/ 同任何深度）
 __pycache__/
